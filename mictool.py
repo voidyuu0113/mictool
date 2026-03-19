@@ -888,10 +888,17 @@ class GlobalHotkeyManager:
         if key in special:
             return special[key]
         if isinstance(key, pynput_keyboard.KeyCode):
-            if key.char:
+            if key.char and key.char.isprintable() and not key.char.isspace():
                 return key.char.lower()
-            if key.vk is not None and 112 <= key.vk <= 123:
-                return f'f{key.vk - 111}'
+            if key.vk is not None:
+                if 65 <= key.vk <= 90:
+                    return chr(key.vk + 32)
+                if 48 <= key.vk <= 57:
+                    return chr(key.vk)
+                if 96 <= key.vk <= 105:
+                    return str(key.vk - 96)
+                if 112 <= key.vk <= 123:
+                    return f'f{key.vk - 111}'
         text = str(key).lower()
         if text.startswith('key.f'):
             return text.replace('key.', '')
@@ -3184,7 +3191,7 @@ class MicToolApp(tk.Tk):
             self.after(0, fn)
 
     def _toggle_output_hotkey(self):
-        if self.engine.running():
+        if self.engine.running:
             self._stop()
         else:
             self._start()
