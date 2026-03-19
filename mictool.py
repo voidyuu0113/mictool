@@ -22,6 +22,12 @@ import ctypes
 import webbrowser
 from pathlib import Path
 
+try:
+    from pynput import keyboard as pynput_keyboard, mouse as pynput_mouse
+except Exception:
+    pynput_keyboard = None
+    pynput_mouse = None
+
 SETTINGS_FILE = Path(__file__).parent / "settings.json"
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -35,6 +41,7 @@ _STRINGS: dict[str, dict[str, str]] = {
     'tab_speaking': {'zh_tw': '說話', 'en': 'Speaking', 'ja': '話す', 'ko': '말하기'},
     'tab_singing':  {'zh_tw': '唱歌', 'en': 'Singing',  'ja': '歌う', 'ko': '노래'},
     'tab_voice':    {'zh_tw': '變聲', 'en': 'Voice',    'ja': 'ボイス', 'ko': '보이스'},
+    'tab_hotkeys':  {'zh_tw': '快捷鍵', 'en': 'Hotkeys', 'ja': 'ホットキー', 'ko': '단축키'},
     'tab_help':     {'zh_tw': '說明', 'en': 'Help',     'ja': 'ヘルプ', 'ko': '도움말'},
     'tab_about':    {'zh_tw': '關於', 'en': 'About',    'ja': '情報',  'ko': '정보'},
     # ── Section headers ───────────────────────────────────────────────────────
@@ -561,6 +568,9 @@ _STRINGS: dict[str, dict[str, str]] = {
     'status_loaded': {
         'zh_tw': '設定已載入。', 'en': 'Settings loaded.', 'ja': '設定を読み込みました。', 'ko': '설정을 불러왔습니다.',
     },
+    'status_hotkey_saved': {
+        'zh_tw': '快捷鍵已更新。', 'en': 'Hotkey updated.', 'ja': 'ホットキーを更新しました。', 'ko': '단축키를 업데이트했습니다.',
+    },
     'err_start_title': {
         'zh_tw': '啟動錯誤', 'en': 'Start Error', 'ja': '起動エラー', 'ko': '시작 오류',
     },
@@ -578,6 +588,93 @@ _STRINGS: dict[str, dict[str, str]] = {
         'en':    'No saved settings found.',
         'ja':    '保存された設定が見つかりません。',
         'ko':    '저장된 설정을 찾을 수 없습니다.',
+    },
+    'hotkeys_intro': {
+        'zh_tw': '可在此綁定全域快捷鍵。程式在背景執行時也能觸發，支援鍵盤與滑鼠按鍵組合。',
+        'en':    'Bind global hotkeys here. They work while the app is in the background and support keyboard plus mouse button combos.',
+        'ja':    'ここでグローバルホットキーを設定できます。アプリがバックグラウンドでも動作し、キーボードとマウスボタンの組み合わせに対応します。',
+        'ko':    '여기에서 전역 단축키를 설정할 수 있습니다. 앱이 백그라운드에 있어도 동작하며 키보드와 마우스 버튼 조합을 지원합니다.',
+    },
+    'hotkeys_intro2': {
+        'zh_tw': '按「錄製」後，按下想要的組合鍵，放開後會自動完成。預設皆為空白。',
+        'en':    'Click Record, press the combo you want, and release to finish automatically. All bindings are empty by default.',
+        'ja':    '「録製」を押した後に使いたいキー組み合わせを押し、放せば自動的に登録されます。初期状態ではすべて未設定です。',
+        'ko':    '기록을 누른 뒤 원하는 조합을 누르고 손을 떼면 자동으로 완료됩니다. 기본값은 모두 비어 있습니다.',
+    },
+    'hotkeys_unavailable': {
+        'zh_tw': '目前無法啟用全域快捷鍵，請安裝 `pynput` 後重新啟動。',
+        'en':    'Global hotkeys are unavailable right now. Install `pynput` and restart the app.',
+        'ja':    '現在はグローバルホットキーを有効化できません。`pynput` をインストールして再起動してください。',
+        'ko':    '현재 전역 단축키를 사용할 수 없습니다. `pynput`를 설치한 뒤 앱을 다시 시작하세요.',
+    },
+    'hotkeys_bindings_title': {
+        'zh_tw': '快捷鍵綁定', 'en': 'Bindings', 'ja': 'バインド', 'ko': '바인딩',
+    },
+    'hotkeys_col_action': {
+        'zh_tw': '功能', 'en': 'Action', 'ja': '機能', 'ko': '기능',
+    },
+    'hotkeys_col_binding': {
+        'zh_tw': '綁定', 'en': 'Binding', 'ja': '割り当て', 'ko': '바인딩',
+    },
+    'hotkeys_record': {
+        'zh_tw': '錄製', 'en': 'Record', 'ja': '録製', 'ko': '기록',
+    },
+    'hotkeys_clear': {
+        'zh_tw': '清除', 'en': 'Clear', 'ja': '消去', 'ko': '지우기',
+    },
+    'hotkeys_empty': {
+        'zh_tw': '未設定', 'en': 'Unassigned', 'ja': '未設定', 'ko': '미설정',
+    },
+    'hotkeys_record_title': {
+        'zh_tw': '錄製快捷鍵', 'en': 'Record Hotkey', 'ja': 'ホットキー録製', 'ko': '단축키 기록',
+    },
+    'hotkeys_record_prompt': {
+        'zh_tw': '請按下想要的快捷鍵組合，放開後會自動完成。',
+        'en':    'Press the hotkey combo you want. It will finish automatically when you release it.',
+        'ja':    '設定したいホットキーの組み合わせを押してください。離すと自動で完了します。',
+        'ko':    '원하는 단축키 조합을 누르세요. 손을 떼면 자동으로 완료됩니다.',
+    },
+    'hotkeys_record_cancel': {
+        'zh_tw': '取消', 'en': 'Cancel', 'ja': 'キャンセル', 'ko': '취소',
+    },
+    'hotkeys_section_audio': {
+        'zh_tw': '音訊控制', 'en': 'Audio Control', 'ja': '音声制御', 'ko': '오디오 제어',
+    },
+    'hotkeys_section_mode': {
+        'zh_tw': '處理模式', 'en': 'Processing Mode', 'ja': '処理モード', 'ko': '처리 모드',
+    },
+    'hotkeys_section_voice': {
+        'zh_tw': '變聲模式', 'en': 'Voice Modes', 'ja': 'ボイスモード', 'ko': '보이스 모드',
+    },
+    'hotkey_toggle_output': {
+        'zh_tw': '快速開關聲音輸出', 'en': 'Toggle Audio Output', 'ja': '音声出力の切替', 'ko': '오디오 출력 토글',
+    },
+    'hotkey_mode_speaking': {
+        'zh_tw': '切換到說話模式', 'en': 'Switch to Speaking Mode', 'ja': '話すモードに切替', 'ko': '말하기 모드로 전환',
+    },
+    'hotkey_mode_singing': {
+        'zh_tw': '切換到唱歌模式', 'en': 'Switch to Singing Mode', 'ja': '歌うモードに切替', 'ko': '노래 모드로 전환',
+    },
+    'hotkey_voice_off': {
+        'zh_tw': '變聲關閉', 'en': 'Voice Off', 'ja': 'ボイスオフ', 'ko': '변성 끄기',
+    },
+    'hotkey_voice_robot': {
+        'zh_tw': '機器人變聲', 'en': 'Robot Voice', 'ja': 'ロボットボイス', 'ko': '로봇 변성',
+    },
+    'hotkey_voice_chipmunk': {
+        'zh_tw': '花栗鼠變聲', 'en': 'Chipmunk Voice', 'ja': 'チップマンクボイス', 'ko': '다람쥐 변성',
+    },
+    'hotkey_voice_deep': {
+        'zh_tw': '低沉變聲', 'en': 'Deep Voice', 'ja': '低音ボイス', 'ko': '딥 보이스',
+    },
+    'hotkey_voice_female': {
+        'zh_tw': '女聲變聲', 'en': 'Female Voice', 'ja': '女性ボイス', 'ko': '여성 보이스',
+    },
+    'hotkey_voice_male': {
+        'zh_tw': '男聲變聲', 'en': 'Male Voice', 'ja': '男性ボイス', 'ko': '남성 보이스',
+    },
+    'hotkey_voice_custom': {
+        'zh_tw': '自訂變聲', 'en': 'Custom Voice', 'ja': 'カスタムボイス', 'ko': '사용자 정의 보이스',
     },
 }
 
@@ -601,6 +698,256 @@ def _mkvar(key: str) -> tk.StringVar:
     v = tk.StringVar(value=t(key))
     _I18N_VARS.append((v, key))
     return v
+
+
+HOTKEY_ACTIONS = [
+    ('hotkeys_section_audio', [
+        ('toggle_output', 'hotkey_toggle_output'),
+    ]),
+    ('hotkeys_section_mode', [
+        ('mode_speaking', 'hotkey_mode_speaking'),
+        ('mode_singing', 'hotkey_mode_singing'),
+    ]),
+    ('hotkeys_section_voice', [
+        ('voice_off', 'hotkey_voice_off'),
+        ('voice_robot', 'hotkey_voice_robot'),
+        ('voice_chipmunk', 'hotkey_voice_chipmunk'),
+        ('voice_deep', 'hotkey_voice_deep'),
+        ('voice_female', 'hotkey_voice_female'),
+        ('voice_male', 'hotkey_voice_male'),
+        ('voice_custom', 'hotkey_voice_custom'),
+    ]),
+]
+
+
+def _combo_sort_key(token: str):
+    mod_order = {
+        'ctrl': 0, 'shift': 1, 'alt': 2, 'cmd': 3,
+    }
+    if token in mod_order:
+        return (0, mod_order[token], token)
+    if token.startswith('mouse_'):
+        return (2, 0, token)
+    return (1, 0, token)
+
+
+def _canonical_hotkey_tokens(tokens) -> tuple[str, ...]:
+    cleaned = [str(tok).strip().lower() for tok in tokens if str(tok).strip()]
+    return tuple(sorted(dict.fromkeys(cleaned), key=_combo_sort_key))
+
+
+def _parse_hotkey_combo(combo: str) -> tuple[str, ...]:
+    if not combo:
+        return ()
+    return _canonical_hotkey_tokens(combo.split('+'))
+
+
+def _pretty_hotkey_token(token: str) -> str:
+    mapping = {
+        'ctrl': 'Ctrl',
+        'shift': 'Shift',
+        'alt': 'Alt',
+        'cmd': 'Win',
+        'space': 'Space',
+        'enter': 'Enter',
+        'tab': 'Tab',
+        'esc': 'Esc',
+        'backspace': 'Backspace',
+        'delete': 'Delete',
+        'up': 'Up',
+        'down': 'Down',
+        'left': 'Left',
+        'right': 'Right',
+        'page_up': 'Page Up',
+        'page_down': 'Page Down',
+        'home': 'Home',
+        'end': 'End',
+        'insert': 'Insert',
+        'mouse_left': 'Mouse Left',
+        'mouse_right': 'Mouse Right',
+        'mouse_middle': 'Mouse Middle',
+        'mouse_x1': 'Mouse X1',
+        'mouse_x2': 'Mouse X2',
+    }
+    if token in mapping:
+        return mapping[token]
+    if len(token) == 1:
+        return token.upper()
+    if token.startswith('f') and token[1:].isdigit():
+        return token.upper()
+    return token.replace('_', ' ').title()
+
+
+def format_hotkey_combo(combo: str) -> str:
+    tokens = _parse_hotkey_combo(combo)
+    return '+'.join(_pretty_hotkey_token(tok) for tok in tokens)
+
+
+class GlobalHotkeyManager:
+    def __init__(self, emit):
+        self._emit = emit
+        self.available = pynput_keyboard is not None and pynput_mouse is not None
+        self._bindings: dict[str, frozenset[str]] = {}
+        self._pressed: set[str] = set()
+        self._active_actions: set[str] = set()
+        self._capture_tokens: set[str] = set()
+        self._capture_active = False
+        self._key_listener = None
+        self._mouse_listener = None
+        self._lock = threading.Lock()
+
+    def start(self):
+        if not self.available or self._key_listener is not None:
+            return
+        self._key_listener = pynput_keyboard.Listener(
+            on_press=self._on_key_press,
+            on_release=self._on_key_release,
+        )
+        self._mouse_listener = pynput_mouse.Listener(
+            on_click=self._on_mouse_click,
+        )
+        self._key_listener.start()
+        self._mouse_listener.start()
+
+    def stop(self):
+        for listener in (self._key_listener, self._mouse_listener):
+            if listener is not None:
+                try:
+                    listener.stop()
+                except Exception:
+                    pass
+        self._key_listener = None
+        self._mouse_listener = None
+
+    def set_binding(self, action: str, combo: str):
+        tokens = frozenset(_parse_hotkey_combo(combo))
+        with self._lock:
+            if tokens:
+                self._bindings[action] = tokens
+            else:
+                self._bindings.pop(action, None)
+                self._active_actions.discard(action)
+
+    def get_binding(self, action: str) -> str:
+        tokens = self._bindings.get(action, frozenset())
+        return '+'.join(tokens)
+
+    def begin_capture(self):
+        with self._lock:
+            self._capture_tokens.clear()
+            self._capture_active = True
+            self._active_actions.clear()
+
+    def cancel_capture(self):
+        with self._lock:
+            self._capture_tokens.clear()
+            self._capture_active = False
+
+    def _finish_capture_if_ready(self):
+        with self._lock:
+            if not self._capture_active or self._pressed or not self._capture_tokens:
+                return
+            combo = '+'.join(_canonical_hotkey_tokens(self._capture_tokens))
+            self._capture_tokens.clear()
+            self._capture_active = False
+        self._emit(('capture_done', combo))
+
+    def _key_to_token(self, key):
+        if pynput_keyboard is None:
+            return None
+        special = {
+            pynput_keyboard.Key.ctrl: 'ctrl',
+            pynput_keyboard.Key.ctrl_l: 'ctrl',
+            pynput_keyboard.Key.ctrl_r: 'ctrl',
+            pynput_keyboard.Key.shift: 'shift',
+            pynput_keyboard.Key.shift_l: 'shift',
+            pynput_keyboard.Key.shift_r: 'shift',
+            pynput_keyboard.Key.alt: 'alt',
+            pynput_keyboard.Key.alt_l: 'alt',
+            pynput_keyboard.Key.alt_r: 'alt',
+            pynput_keyboard.Key.alt_gr: 'alt',
+            pynput_keyboard.Key.cmd: 'cmd',
+            pynput_keyboard.Key.cmd_l: 'cmd',
+            pynput_keyboard.Key.cmd_r: 'cmd',
+            pynput_keyboard.Key.space: 'space',
+            pynput_keyboard.Key.enter: 'enter',
+            pynput_keyboard.Key.tab: 'tab',
+            pynput_keyboard.Key.esc: 'esc',
+            pynput_keyboard.Key.backspace: 'backspace',
+            pynput_keyboard.Key.delete: 'delete',
+            pynput_keyboard.Key.up: 'up',
+            pynput_keyboard.Key.down: 'down',
+            pynput_keyboard.Key.left: 'left',
+            pynput_keyboard.Key.right: 'right',
+            pynput_keyboard.Key.page_up: 'page_up',
+            pynput_keyboard.Key.page_down: 'page_down',
+            pynput_keyboard.Key.home: 'home',
+            pynput_keyboard.Key.end: 'end',
+            pynput_keyboard.Key.insert: 'insert',
+        }
+        if key in special:
+            return special[key]
+        if isinstance(key, pynput_keyboard.KeyCode):
+            if key.char:
+                return key.char.lower()
+            if key.vk is not None and 112 <= key.vk <= 123:
+                return f'f{key.vk - 111}'
+        text = str(key).lower()
+        if text.startswith('key.f'):
+            return text.replace('key.', '')
+        return None
+
+    def _mouse_to_token(self, button):
+        if pynput_mouse is None:
+            return None
+        mapping = {
+            pynput_mouse.Button.left: 'mouse_left',
+            pynput_mouse.Button.right: 'mouse_right',
+            pynput_mouse.Button.middle: 'mouse_middle',
+            getattr(pynput_mouse.Button, 'x1', None): 'mouse_x1',
+            getattr(pynput_mouse.Button, 'x2', None): 'mouse_x2',
+        }
+        return mapping.get(button)
+
+    def _update_press(self, token: str, pressed: bool):
+        if not token:
+            return
+        with self._lock:
+            if pressed:
+                self._pressed.add(token)
+                if self._capture_active:
+                    self._capture_tokens.add(token)
+            else:
+                self._pressed.discard(token)
+                self._active_actions = {
+                    action for action in self._active_actions
+                    if self._bindings.get(action, frozenset()).issubset(self._pressed)
+                }
+        if pressed:
+            self._trigger_actions()
+        else:
+            self._finish_capture_if_ready()
+
+    def _trigger_actions(self):
+        to_fire = []
+        with self._lock:
+            if self._capture_active:
+                return
+            for action, combo in self._bindings.items():
+                if combo and combo.issubset(self._pressed) and action not in self._active_actions:
+                    self._active_actions.add(action)
+                    to_fire.append(action)
+        for action in to_fire:
+            self._emit(('action', action))
+
+    def _on_key_press(self, key):
+        self._update_press(self._key_to_token(key), True)
+
+    def _on_key_release(self, key):
+        self._update_press(self._key_to_token(key), False)
+
+    def _on_mouse_click(self, x, y, button, pressed):
+        self._update_press(self._mouse_to_token(button), pressed)
 
 # ──────────────────────────────────────────────────────────────────────────────
 #  Global audio constants
@@ -1779,10 +2126,18 @@ class MicToolApp(tk.Tk):
         self._i18n_textboxes: list = [] # list[tuple[tk.Text, str]]
         self._nb_tab_info:  list = []   # list[tuple[tk.Frame, str, str]]
         self._nb: ttk.Notebook | None = None
+        self._hotkey_bindings: dict[str, str] = {}
+        self._hotkey_vars: dict[str, tk.StringVar] = {}
+        self._hotkey_capture_dialog: tk.Toplevel | None = None
+        self._hotkey_capture_action: str | None = None
+        self._hotkey_event_q: queue.Queue = queue.Queue()
+        self._hotkeys = GlobalHotkeyManager(self._hotkey_event_q.put_nowait)
+        self._hotkeys.start()
         self._apply_styles()
         self._build_ui()
         self._auto_load()     # restore last session
         self._vu_loop()
+        self._hotkey_loop()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     @staticmethod
@@ -1881,17 +2236,20 @@ class MicToolApp(tk.Tk):
         speak_outer = tk.Frame(nb, bg=BG)
         sing_outer  = tk.Frame(nb, bg=BG)
         voice_outer = tk.Frame(nb, bg=BG)
+        hotkey_outer = tk.Frame(nb, bg=BG)
         help_outer  = tk.Frame(nb, bg=BG)
         about_outer = tk.Frame(nb, bg=BG)
         nb.add(speak_outer, text=f"  🎤  {t('tab_speaking')}  ")
         nb.add(sing_outer,  text=f"  🎵  {t('tab_singing')}  ")
         nb.add(voice_outer, text=f"  🎙  {t('tab_voice')}  ")
+        nb.add(hotkey_outer, text=f"  ⌨  {t('tab_hotkeys')}  ")
         nb.add(help_outer,  text=f"  ❓  {t('tab_help')}  ")
         nb.add(about_outer, text=f"  ℹ  {t('tab_about')}  ")
         self._nb_tab_info = [
             (speak_outer, '🎤', 'tab_speaking'),
             (sing_outer,  '🎵', 'tab_singing'),
             (voice_outer, '🎙', 'tab_voice'),
+            (hotkey_outer, '⌨', 'tab_hotkeys'),
             (help_outer,  '❓', 'tab_help'),
             (about_outer, 'ℹ',  'tab_about'),
         ]
@@ -1904,6 +2262,9 @@ class MicToolApp(tk.Tk):
 
         voice_scroll = ScrollFrame(voice_outer)
         self._build_voice_panel(voice_scroll)
+
+        hotkey_scroll = ScrollFrame(hotkey_outer)
+        self._build_hotkeys_panel(hotkey_scroll)
 
         help_scroll = ScrollFrame(help_outer)
         self._build_help_panel(help_scroll)
@@ -2621,6 +2982,65 @@ class MicToolApp(tk.Tk):
 
         self._refresh_voice_btns()
 
+    def _build_hotkeys_panel(self, parent: tk.Frame):
+        p = tk.Frame(parent, bg=BG, padx=12, pady=8)
+        p.pack(fill='x')
+
+        tk.Label(p, textvariable=_mkvar('hotkeys_intro'),
+                 font=("Segoe UI", 9), bg=BG, fg=FG,
+                 justify='left', anchor='w', wraplength=500).pack(fill='x', pady=(0, 2))
+        tk.Label(p, textvariable=_mkvar('hotkeys_intro2'),
+                 font=("Segoe UI", 9), bg=BG, fg=SUB,
+                 justify='left', anchor='w', wraplength=500).pack(fill='x', pady=(0, 8))
+
+        if not self._hotkeys.available:
+            tk.Label(p, textvariable=_mkvar('hotkeys_unavailable'),
+                     font=("Segoe UI", 9, "bold"), bg=BG, fg=YEL,
+                     justify='left', anchor='w', wraplength=500).pack(fill='x', pady=(0, 8))
+            return
+
+        s = self._section(p, 'hotkeys_bindings_title')
+        s.pack(fill='x', pady=(0, 6))
+
+        hdr = tk.Frame(s, bg=BG2)
+        hdr.pack(fill='x', padx=4, pady=(2, 4))
+        tk.Label(hdr, textvariable=_mkvar('hotkeys_col_action'),
+                 font=("Segoe UI", 9, "bold"), bg=BG2, fg=BLUE,
+                 width=22, anchor='w').pack(side='left')
+        tk.Label(hdr, textvariable=_mkvar('hotkeys_col_binding'),
+                 font=("Segoe UI", 9, "bold"), bg=BG2, fg=BLUE,
+                 width=24, anchor='w').pack(side='left')
+
+        for section_key, actions in HOTKEY_ACTIONS:
+            tk.Label(s, textvariable=_mkvar(section_key),
+                     font=("Segoe UI", 9, "bold"), bg=BG2, fg=YEL,
+                     anchor='w').pack(fill='x', padx=4, pady=(6, 2))
+            for action_id, label_key in actions:
+                row = tk.Frame(s, bg=BG2)
+                row.pack(fill='x', padx=4, pady=2)
+                tk.Label(row, textvariable=_mkvar(label_key),
+                         font=("Segoe UI", 9), bg=BG2, fg=FG,
+                         width=22, anchor='w').pack(side='left')
+                var = tk.StringVar(value=t('hotkeys_empty'))
+                self._hotkey_vars[action_id] = var
+                tk.Label(row, textvariable=var,
+                         font=("Consolas", 9), bg=BG3, fg=FG,
+                         width=24, anchor='w', padx=8, pady=4).pack(side='left', padx=(0, 6))
+                btn_rec = tk.Button(row, text=t('hotkeys_record'),
+                                    font=("Segoe UI", 8), bg=BG3, fg=BLUE,
+                                    bd=0, padx=8, pady=4,
+                                    command=lambda a=action_id: self._begin_hotkey_capture(a))
+                btn_rec.pack(side='left', padx=(0, 4))
+                self._i18n_buttons.append((btn_rec, 'hotkeys_record'))
+                btn_clear = tk.Button(row, text=t('hotkeys_clear'),
+                                      font=("Segoe UI", 8), bg=BG3, fg=SUB,
+                                      bd=0, padx=8, pady=4,
+                                      command=lambda a=action_id: self._clear_hotkey_binding(a))
+                btn_clear.pack(side='left')
+                self._i18n_buttons.append((btn_clear, 'hotkeys_clear'))
+
+        self._refresh_hotkey_labels()
+
     def _set_voice_mode(self, mode: int):
         self.engine.pitch.mode = mode
         # Auto-load physiologically-based presets when switching to gender modes
@@ -2674,6 +3094,100 @@ class MicToolApp(tk.Tk):
         fs = self.engine.pitch._fs
         fs.formant  = self._vc_formant.get()
         fs.pitch_st = self._vc_gender_pitch.get()
+
+    def _refresh_hotkey_labels(self):
+        for action_id, var in self._hotkey_vars.items():
+            combo = self._hotkey_bindings.get(action_id, '')
+            var.set(format_hotkey_combo(combo) if combo else t('hotkeys_empty'))
+
+    def _begin_hotkey_capture(self, action_id: str):
+        if not self._hotkeys.available:
+            return
+        self._cancel_hotkey_capture()
+        self._hotkey_capture_action = action_id
+        self._hotkeys.begin_capture()
+        dlg = tk.Toplevel(self)
+        dlg.title(t('hotkeys_record_title'))
+        dlg.configure(bg=BG)
+        dlg.resizable(False, False)
+        dlg.grab_set()
+        tk.Label(dlg, text=t('hotkeys_record_prompt'),
+                 font=("Segoe UI", 9), bg=BG, fg=FG,
+                 wraplength=340, justify='left').pack(padx=16, pady=(14, 10))
+        btn = tk.Button(dlg, text=t('hotkeys_record_cancel'),
+                        font=("Segoe UI", 9), bg=BG3, fg=FG,
+                        bd=0, padx=14, pady=5,
+                        command=self._cancel_hotkey_capture)
+        btn.pack(pady=(0, 14))
+        self._i18n_buttons.append((btn, 'hotkeys_record_cancel'))
+        dlg.protocol("WM_DELETE_WINDOW", self._cancel_hotkey_capture)
+        self._hotkey_capture_dialog = dlg
+
+    def _cancel_hotkey_capture(self):
+        self._hotkeys.cancel_capture()
+        if self._hotkey_capture_dialog is not None:
+            try:
+                self._hotkey_capture_dialog.destroy()
+            except Exception:
+                pass
+        self._hotkey_capture_dialog = None
+        self._hotkey_capture_action = None
+
+    def _finish_hotkey_capture(self, combo: str):
+        action_id = self._hotkey_capture_action
+        self._cancel_hotkey_capture()
+        if not action_id:
+            return
+        self._set_hotkey_binding(action_id, combo)
+        self._status(t('status_hotkey_saved'), BLUE)
+
+    def _set_hotkey_binding(self, action_id: str, combo: str):
+        normalized = '+'.join(_parse_hotkey_combo(combo))
+        if normalized:
+            self._hotkey_bindings[action_id] = normalized
+        else:
+            self._hotkey_bindings.pop(action_id, None)
+        self._hotkeys.set_binding(action_id, normalized)
+        self._refresh_hotkey_labels()
+
+    def _clear_hotkey_binding(self, action_id: str):
+        self._set_hotkey_binding(action_id, '')
+        self._status(t('status_hotkey_saved'), BLUE)
+
+    def _hotkey_loop(self):
+        try:
+            while True:
+                kind, payload = self._hotkey_event_q.get_nowait()
+                if kind == 'action':
+                    self._run_hotkey_action(payload)
+                elif kind == 'capture_done':
+                    self._finish_hotkey_capture(payload)
+        except queue.Empty:
+            pass
+        self.after(30, self._hotkey_loop)
+
+    def _run_hotkey_action(self, action_id: str):
+        actions = {
+            'toggle_output': self._toggle_output_hotkey,
+            'mode_speaking': lambda: self._set_mode(AudioEngine.SPEAK),
+            'mode_singing': lambda: self._set_mode(AudioEngine.SING),
+            'voice_off': lambda: self._set_voice_mode(PitchShifter.MODE_OFF),
+            'voice_robot': lambda: self._set_voice_mode(PitchShifter.MODE_ROBOT),
+            'voice_chipmunk': lambda: self._set_voice_mode(PitchShifter.MODE_CHIPMUNK),
+            'voice_deep': lambda: self._set_voice_mode(PitchShifter.MODE_DEEP),
+            'voice_female': lambda: self._set_voice_mode(PitchShifter.MODE_FEMALE),
+            'voice_male': lambda: self._set_voice_mode(PitchShifter.MODE_MALE),
+            'voice_custom': lambda: self._set_voice_mode(PitchShifter.MODE_CUSTOM),
+        }
+        fn = actions.get(action_id)
+        if fn:
+            self.after(0, fn)
+
+    def _toggle_output_hotkey(self):
+        if self.engine.running():
+            self._stop()
+        else:
+            self._start()
 
     # ── Parameter callbacks — Speaking ────────────────────────────────────────
 
@@ -2898,6 +3412,7 @@ class MicToolApp(tk.Tk):
             "mon_vol":     self._mon_vol_var.get(),
             "mode":        self.engine.mode,
             "voice_mode":  self.engine.pitch.mode,
+            "hotkeys":     self._hotkey_bindings,
             "sliders":     self._collect_slider_values(),
         }
         try:
@@ -2943,6 +3458,9 @@ class MicToolApp(tk.Tk):
             self._set_mode(int(data["mode"]))
         if "voice_mode" in data:
             self._set_voice_mode(int(data["voice_mode"]))
+        for action_id, combo in data.get("hotkeys", {}).items():
+            if action_id in self._hotkey_vars:
+                self._set_hotkey_binding(action_id, combo)
         # Sliders — setting each var fires the trace → updates the engine
         for name, val in data.get("sliders", {}).items():
             obj = getattr(self, name, None)
@@ -2958,7 +3476,9 @@ class MicToolApp(tk.Tk):
         self.after(3000, lambda: self._status_lbl.config(text="", fg=SUB))
 
     def _on_close(self):
+        self._cancel_hotkey_capture()
         self._save_settings()   # auto-save on exit
+        self._hotkeys.stop()
         self.engine.stop()
         self.destroy()
 

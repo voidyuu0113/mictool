@@ -11,6 +11,7 @@ MicTool 是一套以 Python 製作的即時麥克風音訊處理工具，適合�
 - `Singing` 模式：適合唱歌，額外提供 Reverb 與較適合人聲的音色調整
 - `Voice` 變聲模式：提供 Robot、Chipmunk、Deep、Female、Male、Custom
 - App Audio Loopback，可把指定應用程式聲音混入輸出
+- 全域快捷鍵頁面，可綁定鍵盤/滑鼠組合鍵，在背景執行時也能觸發
 - 內建多語系介面，包含繁體中文、English、日本語、한국어
 - 可儲存與載入目前設定
 
