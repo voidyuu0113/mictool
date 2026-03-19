@@ -696,6 +696,9 @@ _STRINGS: dict[str, dict[str, str]] = {
     'hotkeys_section_voice': {
         'zh_tw': '變聲模式', 'en': 'Voice Modes', 'ja': 'ボイスモード', 'ko': '보이스 모드',
     },
+    'hotkeys_section_soundboard': {
+        'zh_tw': '音效快捷鍵', 'en': 'Soundboard Hotkeys', 'ja': 'サウンドボード', 'ko': '사운드보드 단축키',
+    },
     'hotkey_toggle_output': {
         'zh_tw': '快速開關聲音輸出', 'en': 'Toggle Audio Output', 'ja': '音声出力の切替', 'ko': '오디오 출력 토글',
     },
@@ -768,6 +771,10 @@ HOTKEY_ACTIONS = [
         ('voice_custom', 'hotkey_voice_custom'),
     ]),
 ]
+
+
+def _soundboard_hotkey_action_id(path: str) -> str:
+    return f"soundboard::{path}"
 
 
 def _combo_sort_key(token: str):
@@ -2274,6 +2281,7 @@ class MicToolApp(tk.Tk):
         self._nb: ttk.Notebook | None = None
         self._hotkey_bindings: dict[str, str] = {}
         self._hotkey_vars: dict[str, tk.StringVar] = {}
+        self._hotkey_rows: dict[str, tk.Frame] = {}
         self._hotkey_capture_dialog: tk.Toplevel | None = None
         self._hotkey_capture_action: str | None = None
         self._hotkey_event_q: queue.Queue = queue.Queue()
@@ -2286,6 +2294,7 @@ class MicToolApp(tk.Tk):
         self._tray_ready = False
         self._tray_supported: bool | None = None
         self._tray_failure_logged = False
+        self._hotkeys_bindings_frame: tk.Frame | None = None
         self._is_quitting = False
         self._hotkeys.start()
         self._apply_styles()
@@ -3258,6 +3267,7 @@ class MicToolApp(tk.Tk):
         self._soundboard_items.append(item)
         self.engine.soundboard.add_clip(str(p), samples, item['volume'] / 100.0)
         self._refresh_soundboard_ui()
+        self._refresh_hotkeys_panel()
         if not quiet:
             self._status(t('status_sound_added'), BLUE)
         return True
@@ -3316,15 +3326,20 @@ class MicToolApp(tk.Tk):
         self.after(200, self._soundboard_loop)
 
     def _remove_soundboard_item(self, path: str):
+        self._clear_hotkey_binding(_soundboard_hotkey_action_id(path), quiet=True)
         self._soundboard_items = [item for item in self._soundboard_items if item['path'] != path]
         self.engine.soundboard.remove_clip(path)
         self._refresh_soundboard_ui()
+        self._refresh_hotkeys_panel()
         self._status(t('status_sound_removed'), SUB)
 
     def _clear_soundboard(self):
+        for item in list(self._soundboard_items):
+            self._clear_hotkey_binding(_soundboard_hotkey_action_id(item['path']), quiet=True)
         self._soundboard_items.clear()
         self.engine.soundboard.clear()
         self._refresh_soundboard_ui()
+        self._refresh_hotkeys_panel()
         self._status(t('status_sound_cleared'), SUB)
 
     def _build_hotkeys_panel(self, parent: tk.Frame):
@@ -3346,45 +3361,8 @@ class MicToolApp(tk.Tk):
 
         s = self._section(p, 'hotkeys_bindings_title')
         s.pack(fill='x', pady=(0, 6))
-
-        hdr = tk.Frame(s, bg=BG2)
-        hdr.pack(fill='x', padx=4, pady=(2, 4))
-        tk.Label(hdr, textvariable=_mkvar('hotkeys_col_action'),
-                 font=("Segoe UI", 9, "bold"), bg=BG2, fg=BLUE,
-                 width=22, anchor='w').pack(side='left')
-        tk.Label(hdr, textvariable=_mkvar('hotkeys_col_binding'),
-                 font=("Segoe UI", 9, "bold"), bg=BG2, fg=BLUE,
-                 width=24, anchor='w').pack(side='left')
-
-        for section_key, actions in HOTKEY_ACTIONS:
-            tk.Label(s, textvariable=_mkvar(section_key),
-                     font=("Segoe UI", 9, "bold"), bg=BG2, fg=YEL,
-                     anchor='w').pack(fill='x', padx=4, pady=(6, 2))
-            for action_id, label_key in actions:
-                row = tk.Frame(s, bg=BG2)
-                row.pack(fill='x', padx=4, pady=2)
-                tk.Label(row, textvariable=_mkvar(label_key),
-                         font=("Segoe UI", 9), bg=BG2, fg=FG,
-                         width=22, anchor='w').pack(side='left')
-                var = tk.StringVar(value=t('hotkeys_empty'))
-                self._hotkey_vars[action_id] = var
-                tk.Label(row, textvariable=var,
-                         font=("Consolas", 9), bg=BG3, fg=FG,
-                         width=24, anchor='w', padx=8, pady=4).pack(side='left', padx=(0, 6))
-                btn_rec = tk.Button(row, text=t('hotkeys_record'),
-                                    font=("Segoe UI", 8), bg=BG3, fg=BLUE,
-                                    bd=0, padx=8, pady=4,
-                                    command=lambda a=action_id: self._begin_hotkey_capture(a))
-                btn_rec.pack(side='left', padx=(0, 4))
-                self._i18n_buttons.append((btn_rec, 'hotkeys_record'))
-                btn_clear = tk.Button(row, text=t('hotkeys_clear'),
-                                      font=("Segoe UI", 8), bg=BG3, fg=SUB,
-                                      bd=0, padx=8, pady=4,
-                                      command=lambda a=action_id: self._clear_hotkey_binding(a))
-                btn_clear.pack(side='left')
-                self._i18n_buttons.append((btn_clear, 'hotkeys_clear'))
-
-        self._refresh_hotkey_labels()
+        self._hotkeys_bindings_frame = s
+        self._refresh_hotkeys_panel()
 
     def _set_voice_mode(self, mode: int):
         self.engine.pitch.mode = mode
@@ -3445,6 +3423,71 @@ class MicToolApp(tk.Tk):
             combo = self._hotkey_bindings.get(action_id, '')
             var.set(format_hotkey_combo(combo) if combo else t('hotkeys_empty'))
 
+    def _hotkey_section_specs(self):
+        sections = list(HOTKEY_ACTIONS)
+        soundboard_actions = [
+            (_soundboard_hotkey_action_id(item['path']), item['name'])
+            for item in self._soundboard_items
+        ]
+        if soundboard_actions:
+            sections.append(('hotkeys_section_soundboard', soundboard_actions))
+        return sections
+
+    def _refresh_hotkeys_panel(self):
+        if self._hotkeys_bindings_frame is None:
+            return
+        for child in list(self._hotkeys_bindings_frame.winfo_children()):
+            child.destroy()
+        self._hotkey_vars = {}
+        self._hotkey_rows = {}
+
+        hdr = tk.Frame(self._hotkeys_bindings_frame, bg=BG2)
+        hdr.pack(fill='x', padx=4, pady=(2, 4))
+        tk.Label(hdr, textvariable=_mkvar('hotkeys_col_action'),
+                 font=("Segoe UI", 9, "bold"), bg=BG2, fg=BLUE,
+                 width=22, anchor='w').pack(side='left')
+        tk.Label(hdr, textvariable=_mkvar('hotkeys_col_binding'),
+                 font=("Segoe UI", 9, "bold"), bg=BG2, fg=BLUE,
+                 width=24, anchor='w').pack(side='left')
+
+        valid_actions = set()
+        for section_key, actions in self._hotkey_section_specs():
+            tk.Label(self._hotkeys_bindings_frame, textvariable=_mkvar(section_key),
+                     font=("Segoe UI", 9, "bold"), bg=BG2, fg=YEL,
+                     anchor='w').pack(fill='x', padx=4, pady=(6, 2))
+            for action_id, label in actions:
+                valid_actions.add(action_id)
+                row = tk.Frame(self._hotkeys_bindings_frame, bg=BG2)
+                row.pack(fill='x', padx=4, pady=2)
+                self._hotkey_rows[action_id] = row
+                label_text = _mkvar(label) if isinstance(label, str) and label.startswith('hotkey_') else tk.StringVar(value=label)
+                tk.Label(row, textvariable=label_text,
+                         font=("Segoe UI", 9), bg=BG2, fg=FG,
+                         width=22, anchor='w').pack(side='left')
+                var = tk.StringVar(value=t('hotkeys_empty'))
+                self._hotkey_vars[action_id] = var
+                tk.Label(row, textvariable=var,
+                         font=("Consolas", 9), bg=BG3, fg=FG,
+                         width=24, anchor='w', padx=8, pady=4).pack(side='left', padx=(0, 6))
+                btn_rec = tk.Button(row, text=t('hotkeys_record'),
+                                    font=("Segoe UI", 8), bg=BG3, fg=BLUE,
+                                    bd=0, padx=8, pady=4,
+                                    command=lambda a=action_id: self._begin_hotkey_capture(a))
+                btn_rec.pack(side='left', padx=(0, 4))
+                self._i18n_buttons.append((btn_rec, 'hotkeys_record'))
+                btn_clear = tk.Button(row, text=t('hotkeys_clear'),
+                                      font=("Segoe UI", 8), bg=BG3, fg=SUB,
+                                      bd=0, padx=8, pady=4,
+                                      command=lambda a=action_id: self._clear_hotkey_binding(a))
+                btn_clear.pack(side='left')
+                self._i18n_buttons.append((btn_clear, 'hotkeys_clear'))
+
+        for action_id in list(self._hotkey_bindings.keys()):
+            if action_id not in valid_actions:
+                self._hotkeys.set_binding(action_id, '')
+                self._hotkey_bindings.pop(action_id, None)
+        self._refresh_hotkey_labels()
+
     def _begin_hotkey_capture(self, action_id: str):
         if not self._hotkeys.available:
             return
@@ -3495,9 +3538,10 @@ class MicToolApp(tk.Tk):
         self._hotkeys.set_binding(action_id, normalized)
         self._refresh_hotkey_labels()
 
-    def _clear_hotkey_binding(self, action_id: str):
+    def _clear_hotkey_binding(self, action_id: str, quiet: bool = False):
         self._set_hotkey_binding(action_id, '')
-        self._status(t('status_hotkey_saved'), BLUE)
+        if not quiet:
+            self._status(t('status_hotkey_saved'), BLUE)
 
     def _hotkey_loop(self):
         try:
@@ -3527,6 +3571,10 @@ class MicToolApp(tk.Tk):
         fn = actions.get(action_id)
         if fn:
             self.after(0, fn)
+            return
+        if action_id.startswith('soundboard::'):
+            path = action_id.split('::', 1)[1]
+            self.after(0, lambda p=path: self._toggle_soundboard_item(p))
 
     def _toggle_output_hotkey(self):
         if self.engine.running:
@@ -3807,9 +3855,6 @@ class MicToolApp(tk.Tk):
             self._set_mode(int(data["mode"]))
         if "voice_mode" in data:
             self._set_voice_mode(int(data["voice_mode"]))
-        for action_id, combo in data.get("hotkeys", {}).items():
-            if action_id in self._hotkey_vars:
-                self._set_hotkey_binding(action_id, combo)
         self._soundboard_items.clear()
         self.engine.soundboard.clear()
         for entry in data.get("soundboard_files", []):
@@ -3821,6 +3866,10 @@ class MicToolApp(tk.Tk):
             except Exception:
                 pass
         self._refresh_soundboard_ui()
+        self._refresh_hotkeys_panel()
+        for action_id, combo in data.get("hotkeys", {}).items():
+            if action_id in self._hotkey_vars:
+                self._set_hotkey_binding(action_id, combo)
         # Sliders — setting each var fires the trace → updates the engine
         for name, val in data.get("sliders", {}).items():
             obj = getattr(self, name, None)
