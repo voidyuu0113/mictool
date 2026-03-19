@@ -44,6 +44,7 @@ except Exception:
 
 SETTINGS_FILE = Path(__file__).parent / "settings.json"
 ERROR_LOG_FILE = Path(__file__).parent / "error.log"
+TRAY_ICON_FILE = Path(__file__).parent / "ico" / "f3bte-osrj6-001.ico"
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  i18n — Internationalisation
@@ -2284,6 +2285,7 @@ class MicToolApp(tk.Tk):
         self._tray_icon = None
         self._tray_ready = False
         self._tray_supported: bool | None = None
+        self._tray_failure_logged = False
         self._is_quitting = False
         self._hotkeys.start()
         self._apply_styles()
@@ -3831,6 +3833,11 @@ class MicToolApp(tk.Tk):
     def _create_tray_image(self):
         if Image is None or ImageDraw is None:
             return None
+        if TRAY_ICON_FILE.exists():
+            try:
+                return Image.open(TRAY_ICON_FILE)
+            except Exception as exc:
+                self._log_error(f"tray icon file load failed: {TRAY_ICON_FILE}", exc)
         img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
         draw.rounded_rectangle((6, 6, 58, 58), radius=16, fill=tuple(int(BG2[i:i+2], 16) for i in (1, 3, 5)) + (255,))
@@ -3840,17 +3847,23 @@ class MicToolApp(tk.Tk):
 
     def _ensure_tray_icon(self) -> bool:
         if self._tray_supported is False:
+            if not self._tray_failure_logged:
+                self._log_error("tray ensure skipped because tray_supported is already False")
+                self._tray_failure_logged = True
             return False
         if self._tray_icon is not None:
             return True
         if pystray is None:
+            self._log_error("tray ensure failed because pystray is unavailable")
             self._tray_supported = False
+            self._tray_failure_logged = True
             return False
         try:
             image = self._create_tray_image()
             if image is None:
                 self._log_error("tray create image returned None")
                 self._tray_supported = False
+                self._tray_failure_logged = True
                 return False
             menu = pystray.Menu(
                 pystray.MenuItem(t('tray_restore'), lambda icon, item: self.after(0, self._restore_from_tray), default=True),
@@ -3858,11 +3871,13 @@ class MicToolApp(tk.Tk):
             )
             self._tray_icon = pystray.Icon("MicTool", image, "MicTool", menu)
             self._tray_supported = True
+            self._tray_failure_logged = False
             return True
         except Exception as exc:
             self._log_error("tray ensure icon failed", exc)
             self._tray_supported = False
             self._tray_icon = None
+            self._tray_failure_logged = True
             return False
 
     def _show_tray_icon(self):
@@ -3873,12 +3888,14 @@ class MicToolApp(tk.Tk):
         try:
             self._tray_icon.run_detached()
             self._tray_ready = True
+            self._tray_failure_logged = False
             return True
         except Exception as exc:
             self._log_error("tray run_detached failed", exc)
             self._tray_supported = False
             self._tray_icon = None
             self._tray_ready = False
+            self._tray_failure_logged = True
             return False
 
     def _stop_tray_icon(self):
@@ -3888,12 +3905,15 @@ class MicToolApp(tk.Tk):
             except Exception as exc:
                 self._log_error("tray stop failed", exc)
         self._tray_ready = False
+        self._tray_failure_logged = False
 
     def _hide_to_tray(self):
         if self._is_quitting:
             return
         if not self._show_tray_icon():
-            self._log_error("tray hide aborted because show_tray_icon returned False")
+            if not self._tray_failure_logged:
+                self._log_error("tray hide aborted because show_tray_icon returned False")
+                self._tray_failure_logged = True
             return
         self.withdraw()
         self._status(t('status_sent_to_tray'), BLUE)
