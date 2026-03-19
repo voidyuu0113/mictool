@@ -107,6 +107,7 @@ _STRINGS: dict[str, dict[str, str]] = {
     'soundboard_import': {'zh_tw': '匯入音效', 'en': 'Import Sounds', 'ja': '音声を追加', 'ko': '사운드 추가'},
     'soundboard_clear': {'zh_tw': '清空全部', 'en': 'Clear All', 'ja': 'すべて削除', 'ko': '전체 삭제'},
     'soundboard_play': {'zh_tw': '播放', 'en': 'Play', 'ja': '再生', 'ko': '재생'},
+    'soundboard_pause': {'zh_tw': '暫停', 'en': 'Pause', 'ja': '一時停止', 'ko': '일시정지'},
     'soundboard_remove': {'zh_tw': '移除', 'en': 'Remove', 'ja': '削除', 'ko': '삭제'},
     'tray_restore': {'zh_tw': '顯示主視窗', 'en': 'Restore Window', 'ja': 'ウィンドウを表示', 'ko': '창 복원'},
     'tray_quit': {'zh_tw': '結束程式', 'en': 'Quit', 'ja': '終了', 'ko': '종료'},
@@ -124,12 +125,14 @@ _STRINGS: dict[str, dict[str, str]] = {
     },
     'soundboard_list_title': {'zh_tw': '音效清單', 'en': 'Sound List', 'ja': 'サウンド一覧', 'ko': '사운드 목록'},
     'soundboard_empty': {'zh_tw': '目前還沒有音效檔。', 'en': 'No sound files imported yet.', 'ja': 'まだ音声ファイルがありません。', 'ko': '아직 가져온 사운드 파일이 없습니다.'},
+    'soundboard_volume': {'zh_tw': '音量', 'en': 'Volume', 'ja': '音量', 'ko': '볼륨'},
     'soundboard_missing_backend': {'zh_tw': '缺少 soundfile 套件，無法載入音效檔。', 'en': 'The soundfile package is missing, so audio files cannot be loaded.', 'ja': 'soundfile パッケージがないため、音声ファイルを読み込めません。', 'ko': 'soundfile 패키지가 없어 오디오 파일을 불러올 수 없습니다.'},
     'soundboard_import_title': {'zh_tw': '選擇音效檔', 'en': 'Select Sound Files', 'ja': '音声ファイルを選択', 'ko': '사운드 파일 선택'},
     'status_sound_added': {'zh_tw': '音效已加入', 'en': 'Sound added', 'ja': '音声を追加しました', 'ko': '사운드를 추가했습니다'},
     'status_sound_removed': {'zh_tw': '音效已移除', 'en': 'Sound removed', 'ja': '音声を削除しました', 'ko': '사운드를 삭제했습니다'},
     'status_sound_cleared': {'zh_tw': '已清空音效板', 'en': 'Soundboard cleared', 'ja': 'サウンドボードを空にしました', 'ko': '사운드보드를 비웠습니다'},
     'status_sound_played': {'zh_tw': '已觸發音效', 'en': 'Sound triggered', 'ja': '音声を再生しました', 'ko': '사운드를 재생했습니다'},
+    'status_sound_paused': {'zh_tw': '音效已暫停', 'en': 'Sound paused', 'ja': '音声を一時停止しました', 'ko': '사운드를 일시정지했습니다'},
     'status_sent_to_tray': {'zh_tw': '已最小化到系統匣', 'en': 'Minimized to system tray', 'ja': 'システムトレイに最小化しました', 'ko': '시스템 트레이로 최소화했습니다'},
     'err_sound_load_title': {'zh_tw': '音效載入失敗', 'en': 'Failed to Load Sound', 'ja': '音声の読み込みに失敗しました', 'ko': '사운드 로드 실패'},
     'err_tray_unavailable_title': {'zh_tw': '系統匣不可用', 'en': 'Tray Unavailable', 'ja': 'トレイを利用できません', 'ko': '트레이를 사용할 수 없습니다'},
@@ -1004,39 +1007,74 @@ class GlobalHotkeyManager:
 class SoundboardMixer:
     def __init__(self):
         self._lock = threading.Lock()
-        self._voices: list[list[object]] = []
+        self._clips: dict[str, dict[str, object]] = {}
 
     def clear(self):
         with self._lock:
-            self._voices.clear()
+            self._clips.clear()
 
-    def trigger(self, samples: np.ndarray):
+    def add_clip(self, clip_id: str, samples: np.ndarray, gain: float = 1.0):
         arr = np.asarray(samples, dtype=np.float32).reshape(-1)
-        if arr.size == 0:
-            return
         with self._lock:
-            self._voices.append([arr.copy(), 0])
+            self._clips[clip_id] = {
+                'samples': arr.copy(),
+                'pos': 0,
+                'playing': False,
+                'gain': float(max(0.0, gain)),
+            }
+
+    def remove_clip(self, clip_id: str):
+        with self._lock:
+            self._clips.pop(clip_id, None)
+
+    def set_gain(self, clip_id: str, gain: float):
+        with self._lock:
+            clip = self._clips.get(clip_id)
+            if clip is not None:
+                clip['gain'] = float(max(0.0, gain))
+
+    def is_playing(self, clip_id: str) -> bool:
+        with self._lock:
+            clip = self._clips.get(clip_id)
+            return bool(clip and clip.get('playing'))
+
+    def toggle(self, clip_id: str) -> bool:
+        with self._lock:
+            clip = self._clips.get(clip_id)
+            if clip is None:
+                return False
+            if clip['playing']:
+                clip['playing'] = False
+                return False
+            if clip['pos'] >= len(clip['samples']):
+                clip['pos'] = 0
+            clip['playing'] = True
+            return True
 
     def mix(self, frames: int) -> np.ndarray:
         if frames <= 0:
             return np.zeros(0, dtype=np.float32)
         out = np.zeros(frames, dtype=np.float32)
         with self._lock:
-            if not self._voices:
+            if not self._clips:
                 return out
-            keep: list[list[object]] = []
-            for voice in self._voices:
-                data = voice[0]
-                pos = int(voice[1])
+            for clip in self._clips.values():
+                if not clip.get('playing'):
+                    continue
+                data = clip['samples']
+                pos = int(clip['pos'])
                 if pos >= len(data):
+                    clip['pos'] = 0
+                    clip['playing'] = False
                     continue
                 take = min(frames, len(data) - pos)
-                out[:take] += data[pos:pos + take]
+                out[:take] += data[pos:pos + take] * float(clip.get('gain', 1.0))
                 pos += take
-                if pos < len(data):
-                    voice[1] = pos
-                    keep.append(voice)
-            self._voices = keep
+                if pos >= len(data):
+                    clip['pos'] = 0
+                    clip['playing'] = False
+                else:
+                    clip['pos'] = pos
         return np.clip(out, -1.0, 1.0)
 
     @staticmethod
@@ -2244,6 +2282,7 @@ class MicToolApp(tk.Tk):
         self._tray_icon = None
         self._tray_ready = False
         self._tray_thread = None
+        self._tray_supported: bool | None = None
         self._is_quitting = False
         self._hotkeys.start()
         self._apply_styles()
@@ -2251,6 +2290,7 @@ class MicToolApp(tk.Tk):
         self._auto_load()     # restore last session
         self._vu_loop()
         self._hotkey_loop()
+        self._soundboard_loop()
         self.bind('<Unmap>', self._on_window_unmap)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
@@ -3164,34 +3204,56 @@ class MicToolApp(tk.Tk):
         for item in self._soundboard_items:
             row = tk.Frame(self._soundboard_list_frame, bg=BG2)
             row.pack(fill='x', pady=2)
+            top = tk.Frame(row, bg=BG2)
+            top.pack(fill='x')
             text = f"{item['name']}  ({Path(item['path']).suffix.lower() or '.wav'})"
-            tk.Label(row, text=text, font=("Segoe UI", 9),
+            tk.Label(top, text=text, font=("Segoe UI", 9),
                      bg=BG2, fg=FG, anchor='w').pack(side='left', fill='x', expand=True)
             btn_play = tk.Button(
-                row, text=t('soundboard_play'),
+                top, text=t('soundboard_pause') if self.engine.soundboard.is_playing(item['path']) else t('soundboard_play'),
                 font=("Segoe UI", 8), bg=BG3, fg=BLUE, bd=0, padx=8, pady=4,
-                command=lambda key=item['path']: self._play_soundboard_item(key),
+                command=lambda key=item['path']: self._toggle_soundboard_item(key),
             )
             btn_play.pack(side='left', padx=(6, 4))
+            item['play_button'] = btn_play
             btn_remove = tk.Button(
-                row, text=t('soundboard_remove'),
+                top, text=t('soundboard_remove'),
                 font=("Segoe UI", 8), bg=BG3, fg=SUB, bd=0, padx=8, pady=4,
                 command=lambda key=item['path']: self._remove_soundboard_item(key),
             )
             btn_remove.pack(side='left')
 
-    def _add_soundboard_file(self, path: str, *, quiet: bool = False) -> bool:
+            volume_row = tk.Frame(row, bg=BG2)
+            volume_row.pack(fill='x', pady=(4, 0))
+            tk.Label(volume_row, text=t('soundboard_volume'),
+                     font=("Segoe UI", 8), bg=BG2, fg=SUB, width=7, anchor='w').pack(side='left')
+            var = tk.DoubleVar(value=float(item.get('volume', 100.0)))
+            item['volume_var'] = var
+            ttk.Scale(
+                volume_row, from_=0, to=200, variable=var,
+                orient='horizontal', length=220,
+                command=lambda _value, key=item['path'], v=var: self._set_soundboard_volume(key, v.get()),
+            ).pack(side='left', padx=(0, 6))
+            lbl = tk.Label(volume_row, text=f"{var.get():.0f}%",
+                           font=("Consolas", 8), bg=BG2, fg=BLUE, width=6)
+            lbl.pack(side='left')
+            item['volume_label'] = lbl
+
+    def _add_soundboard_file(self, path: str, *, volume: float = 100.0, quiet: bool = False) -> bool:
         p = Path(path)
         if not p.exists():
             return False
         if any(item['path'] == str(p) for item in self._soundboard_items):
             return False
         samples = SoundboardMixer.load_file(str(p))
-        self._soundboard_items.append({
+        item = {
             'path': str(p),
             'name': p.stem,
             'samples': samples,
-        })
+            'volume': max(0.0, min(200.0, float(volume))),
+        }
+        self._soundboard_items.append(item)
+        self.engine.soundboard.add_clip(str(p), samples, item['volume'] / 100.0)
         self._refresh_soundboard_ui()
         if not quiet:
             self._status(t('status_sound_added'), BLUE)
@@ -3219,15 +3281,40 @@ class MicToolApp(tk.Tk):
         if added:
             self._status(t('status_sound_added'), BLUE)
 
-    def _play_soundboard_item(self, path: str):
+    def _toggle_soundboard_item(self, path: str):
         for item in self._soundboard_items:
             if item['path'] == path:
-                self.engine.soundboard.trigger(item['samples'])
-                self._status(t('status_sound_played'), BLUE)
+                playing = self.engine.soundboard.toggle(path)
+                self._refresh_soundboard_ui()
+                self._status(t('status_sound_played') if playing else t('status_sound_paused'), BLUE if playing else SUB)
                 break
+
+    def _set_soundboard_volume(self, path: str, volume: float):
+        clamped = max(0.0, min(200.0, float(volume)))
+        for item in self._soundboard_items:
+            if item['path'] == path:
+                item['volume'] = clamped
+                label = item.get('volume_label')
+                if label is not None:
+                    label.config(text=f"{clamped:.0f}%")
+                self.engine.soundboard.set_gain(path, clamped / 100.0)
+                break
+
+    def _soundboard_loop(self):
+        if self._is_quitting:
+            return
+        for item in self._soundboard_items:
+            btn = item.get('play_button')
+            if btn is not None:
+                try:
+                    btn.config(text=t('soundboard_pause') if self.engine.soundboard.is_playing(item['path']) else t('soundboard_play'))
+                except Exception:
+                    pass
+        self.after(200, self._soundboard_loop)
 
     def _remove_soundboard_item(self, path: str):
         self._soundboard_items = [item for item in self._soundboard_items if item['path'] != path]
+        self.engine.soundboard.remove_clip(path)
         self._refresh_soundboard_ui()
         self._status(t('status_sound_removed'), SUB)
 
@@ -3668,7 +3755,10 @@ class MicToolApp(tk.Tk):
             "mode":        self.engine.mode,
             "voice_mode":  self.engine.pitch.mode,
             "hotkeys":     self._hotkey_bindings,
-            "soundboard_files": [item['path'] for item in self._soundboard_items],
+            "soundboard_files": [
+                {"path": item['path'], "volume": item.get('volume', 100.0)}
+                for item in self._soundboard_items
+            ],
             "sliders":     self._collect_slider_values(),
         }
         try:
@@ -3719,9 +3809,12 @@ class MicToolApp(tk.Tk):
                 self._set_hotkey_binding(action_id, combo)
         self._soundboard_items.clear()
         self.engine.soundboard.clear()
-        for path in data.get("soundboard_files", []):
+        for entry in data.get("soundboard_files", []):
             try:
-                self._add_soundboard_file(path, quiet=True)
+                if isinstance(entry, str):
+                    self._add_soundboard_file(entry, quiet=True)
+                elif isinstance(entry, dict) and entry.get("path"):
+                    self._add_soundboard_file(entry["path"], volume=entry.get("volume", 100.0), quiet=True)
             except Exception:
                 pass
         self._refresh_soundboard_ui()
@@ -3745,19 +3838,32 @@ class MicToolApp(tk.Tk):
         return img
 
     def _ensure_tray_icon(self) -> bool:
+        if self._tray_supported is False:
+            return False
         if self._tray_icon is not None:
             return True
         if pystray is None:
+            self._tray_supported = False
             return False
-        image = self._create_tray_image()
+        try:
+            image = self._create_tray_image()
+        except Exception:
+            image = None
         if image is None:
+            self._tray_supported = False
             return False
-        menu = pystray.Menu(
-            pystray.MenuItem(t('tray_restore'), lambda icon, item: self.after(0, self._restore_from_tray)),
-            pystray.MenuItem(t('tray_quit'), lambda icon, item: self.after(0, self._quit_from_tray)),
-        )
-        self._tray_icon = pystray.Icon("MicTool", image, "MicTool", menu)
-        return True
+        try:
+            menu = pystray.Menu(
+                pystray.MenuItem(t('tray_restore'), lambda icon, item: self.after(0, self._restore_from_tray)),
+                pystray.MenuItem(t('tray_quit'), lambda icon, item: self.after(0, self._quit_from_tray)),
+            )
+            self._tray_icon = pystray.Icon("MicTool", image, "MicTool", menu)
+            self._tray_supported = True
+            return True
+        except Exception:
+            self._tray_supported = False
+            self._tray_icon = None
+            return False
 
     def _show_tray_icon(self):
         if not self._ensure_tray_icon() or self._tray_icon is None:
@@ -3788,7 +3894,6 @@ class MicToolApp(tk.Tk):
         if self._is_quitting:
             return
         if not self._show_tray_icon():
-            messagebox.showinfo(t('err_tray_unavailable_title'), t('err_tray_unavailable_body'))
             return
         self.withdraw()
         self._status(t('status_sent_to_tray'), BLUE)
@@ -3805,6 +3910,8 @@ class MicToolApp(tk.Tk):
 
     def _on_window_unmap(self, _event=None):
         if self._is_quitting:
+            return
+        if self._tray_supported is False:
             return
         try:
             if self.state() == 'iconic':
