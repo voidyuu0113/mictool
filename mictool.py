@@ -13,7 +13,7 @@ Dependencies:
 import numpy as np
 import sounddevice as sd
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 import scipy.signal as sci_signal
 import json
 import queue
@@ -21,6 +21,19 @@ import threading
 import ctypes
 import webbrowser
 from pathlib import Path
+
+try:
+    import soundfile as sf
+except Exception:
+    sf = None
+
+try:
+    import pystray
+    from PIL import Image, ImageDraw
+except Exception:
+    pystray = None
+    Image = None
+    ImageDraw = None
 
 try:
     from pynput import keyboard as pynput_keyboard, mouse as pynput_mouse
@@ -41,6 +54,7 @@ _STRINGS: dict[str, dict[str, str]] = {
     'tab_speaking': {'zh_tw': '說話', 'en': 'Speaking', 'ja': '話す', 'ko': '말하기'},
     'tab_singing':  {'zh_tw': '唱歌', 'en': 'Singing',  'ja': '歌う', 'ko': '노래'},
     'tab_voice':    {'zh_tw': '變聲', 'en': 'Voice',    'ja': 'ボイス', 'ko': '보이스'},
+    'tab_soundboard': {'zh_tw': '音效板', 'en': 'Soundboard', 'ja': 'サウンドボード', 'ko': '사운드보드'},
     'tab_hotkeys':  {'zh_tw': '快捷鍵', 'en': 'Hotkeys', 'ja': 'ホットキー', 'ko': '단축키'},
     'tab_help':     {'zh_tw': '說明', 'en': 'Help',     'ja': 'ヘルプ', 'ko': '도움말'},
     'tab_about':    {'zh_tw': '關於', 'en': 'About',    'ja': '情報',  'ko': '정보'},
@@ -90,6 +104,36 @@ _STRINGS: dict[str, dict[str, str]] = {
     'btn_stop':      {'zh_tw': '■  停止', 'en': '■  Stop',  'ja': '■  停止', 'ko': '■  정지'},
     'btn_save':      {'zh_tw': 'Save',   'en': 'Save',   'ja': 'Save',   'ko': 'Save'},
     'btn_load':      {'zh_tw': 'Load',   'en': 'Load',   'ja': 'Load',   'ko': 'Load'},
+    'soundboard_import': {'zh_tw': '匯入音效', 'en': 'Import Sounds', 'ja': '音声を追加', 'ko': '사운드 추가'},
+    'soundboard_clear': {'zh_tw': '清空全部', 'en': 'Clear All', 'ja': 'すべて削除', 'ko': '전체 삭제'},
+    'soundboard_play': {'zh_tw': '播放', 'en': 'Play', 'ja': '再生', 'ko': '재생'},
+    'soundboard_remove': {'zh_tw': '移除', 'en': 'Remove', 'ja': '削除', 'ko': '삭제'},
+    'tray_restore': {'zh_tw': '顯示主視窗', 'en': 'Restore Window', 'ja': 'ウィンドウを表示', 'ko': '창 복원'},
+    'tray_quit': {'zh_tw': '結束程式', 'en': 'Quit', 'ja': '終了', 'ko': '종료'},
+    'soundboard_intro': {
+        'zh_tw': '匯入多個音效檔後即可在這裡快速播放。音效會混進目前輸出，適合搭配 OBS 或 VB Cable 使用。',
+        'en': 'Import multiple sound files and trigger them here. Sounds are mixed into the current output for tools like OBS or VB Cable.',
+        'ja': '複数の効果音ファイルを読み込み、ここからすぐ再生できます。音声は現在の出力へミックスされ、OBS や VB Cable と併用できます。',
+        'ko': '여러 효과음 파일을 가져와 여기서 바로 재생할 수 있습니다. 사운드는 현재 출력에 믹스되어 OBS나 VB Cable과 함께 사용할 수 있습니다.',
+    },
+    'soundboard_intro2': {
+        'zh_tw': '支援一次匯入多個檔案。若要讓音效真的送到輸出，請先啟動主輸出。',
+        'en': 'You can import multiple files at once. Start the main output first if you want the sounds to reach your output device.',
+        'ja': '複数ファイルを一度に読み込めます。効果音を実際に出力へ送るには、先にメイン出力を開始してください。',
+        'ko': '여러 파일을 한 번에 가져올 수 있습니다. 효과음을 실제 출력으로 보내려면 먼저 메인 출력을 시작하세요.',
+    },
+    'soundboard_list_title': {'zh_tw': '音效清單', 'en': 'Sound List', 'ja': 'サウンド一覧', 'ko': '사운드 목록'},
+    'soundboard_empty': {'zh_tw': '目前還沒有音效檔。', 'en': 'No sound files imported yet.', 'ja': 'まだ音声ファイルがありません。', 'ko': '아직 가져온 사운드 파일이 없습니다.'},
+    'soundboard_missing_backend': {'zh_tw': '缺少 soundfile 套件，無法載入音效檔。', 'en': 'The soundfile package is missing, so audio files cannot be loaded.', 'ja': 'soundfile パッケージがないため、音声ファイルを読み込めません。', 'ko': 'soundfile 패키지가 없어 오디오 파일을 불러올 수 없습니다.'},
+    'soundboard_import_title': {'zh_tw': '選擇音效檔', 'en': 'Select Sound Files', 'ja': '音声ファイルを選択', 'ko': '사운드 파일 선택'},
+    'status_sound_added': {'zh_tw': '音效已加入', 'en': 'Sound added', 'ja': '音声を追加しました', 'ko': '사운드를 추가했습니다'},
+    'status_sound_removed': {'zh_tw': '音效已移除', 'en': 'Sound removed', 'ja': '音声を削除しました', 'ko': '사운드를 삭제했습니다'},
+    'status_sound_cleared': {'zh_tw': '已清空音效板', 'en': 'Soundboard cleared', 'ja': 'サウンドボードを空にしました', 'ko': '사운드보드를 비웠습니다'},
+    'status_sound_played': {'zh_tw': '已觸發音效', 'en': 'Sound triggered', 'ja': '音声を再生しました', 'ko': '사운드를 재생했습니다'},
+    'status_sent_to_tray': {'zh_tw': '已最小化到系統匣', 'en': 'Minimized to system tray', 'ja': 'システムトレイに最小化しました', 'ko': '시스템 트레이로 최소화했습니다'},
+    'err_sound_load_title': {'zh_tw': '音效載入失敗', 'en': 'Failed to Load Sound', 'ja': '音声の読み込みに失敗しました', 'ko': '사운드 로드 실패'},
+    'err_tray_unavailable_title': {'zh_tw': '系統匣不可用', 'en': 'Tray Unavailable', 'ja': 'トレイを利用できません', 'ko': '트레이를 사용할 수 없습니다'},
+    'err_tray_unavailable_body': {'zh_tw': '目前環境無法建立系統匣圖示，視窗會維持一般最小化。', 'en': 'A tray icon could not be created in this environment, so the window will use normal minimization.', 'ja': 'この環境ではトレイアイコンを作成できないため、通常の最小化になります。', 'ko': '현재 환경에서는 트레이 아이콘을 만들 수 없어 일반 최소화로 동작합니다.'},
     # ── Device labels ─────────────────────────────────────────────────────────
     'dev_input':     {'zh_tw': 'Input:',   'en': 'Input:',   'ja': 'Input:',   'ko': 'Input:'},
     'dev_output':    {'zh_tw': 'Output:',  'en': 'Output:',  'ja': 'Output:',  'ko': 'Output:'},
@@ -955,6 +999,58 @@ class GlobalHotkeyManager:
 
     def _on_mouse_click(self, x, y, button, pressed):
         self._update_press(self._mouse_to_token(button), pressed)
+
+
+class SoundboardMixer:
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._voices: list[list[object]] = []
+
+    def clear(self):
+        with self._lock:
+            self._voices.clear()
+
+    def trigger(self, samples: np.ndarray):
+        arr = np.asarray(samples, dtype=np.float32).reshape(-1)
+        if arr.size == 0:
+            return
+        with self._lock:
+            self._voices.append([arr.copy(), 0])
+
+    def mix(self, frames: int) -> np.ndarray:
+        if frames <= 0:
+            return np.zeros(0, dtype=np.float32)
+        out = np.zeros(frames, dtype=np.float32)
+        with self._lock:
+            if not self._voices:
+                return out
+            keep: list[list[object]] = []
+            for voice in self._voices:
+                data = voice[0]
+                pos = int(voice[1])
+                if pos >= len(data):
+                    continue
+                take = min(frames, len(data) - pos)
+                out[:take] += data[pos:pos + take]
+                pos += take
+                if pos < len(data):
+                    voice[1] = pos
+                    keep.append(voice)
+            self._voices = keep
+        return np.clip(out, -1.0, 1.0)
+
+    @staticmethod
+    def load_file(path: str) -> np.ndarray:
+        if sf is None:
+            raise RuntimeError(t('soundboard_missing_backend'))
+        data, src_sr = sf.read(path, dtype='float32', always_2d=True)
+        if data.size == 0:
+            return np.zeros(0, dtype=np.float32)
+        mono = data.mean(axis=1).astype(np.float32)
+        if int(src_sr) != SR and len(mono) > 0:
+            target_len = max(1, int(round(len(mono) * SR / float(src_sr))))
+            mono = sci_signal.resample(mono, target_len).astype(np.float32)
+        return np.clip(mono, -1.0, 1.0)
 
 # ──────────────────────────────────────────────────────────────────────────────
 #  Global audio constants
@@ -1945,6 +2041,7 @@ class AudioEngine:
         self.sing  = SingingChain()
         self.pitch  = PitchShifter()
         self.loopback = LoopbackCapture()
+        self.soundboard = SoundboardMixer()
         self.stream     = None
         self.mon_stream = None
         self.monitor_vol = 0.8      # independent monitor volume (linear)
@@ -1961,6 +2058,7 @@ class AudioEngine:
         # ── Mix loopback AFTER DSP so app audio is never pitch-shifted/EQ'd ──
         if self.loopback.enabled:
             x = np.clip(x + self.loopback.read(len(x)), -1.0, 1.0)
+        x = np.clip(x + self.soundboard.mix(len(x)), -1.0, 1.0)
         outdata[:, 0] = x
         if outdata.shape[1] == 2:
             outdata[:, 1] = x
@@ -2139,12 +2237,21 @@ class MicToolApp(tk.Tk):
         self._hotkey_capture_action: str | None = None
         self._hotkey_event_q: queue.Queue = queue.Queue()
         self._hotkeys = GlobalHotkeyManager(self._hotkey_event_q.put_nowait)
+        self._soundboard_items: list[dict[str, object]] = []
+        self._soundboard_rows: list[tuple[tk.Widget, str]] = []
+        self._soundboard_empty_lbl: tk.Label | None = None
+        self._soundboard_list_frame: tk.Frame | None = None
+        self._tray_icon = None
+        self._tray_ready = False
+        self._tray_thread = None
+        self._is_quitting = False
         self._hotkeys.start()
         self._apply_styles()
         self._build_ui()
         self._auto_load()     # restore last session
         self._vu_loop()
         self._hotkey_loop()
+        self.bind('<Unmap>', self._on_window_unmap)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     @staticmethod
@@ -2206,6 +2313,8 @@ class MicToolApp(tk.Tk):
                     pass
         if hasattr(self, '_voice_btns'):
             self._refresh_voice_btns()
+        if hasattr(self, '_soundboard_items'):
+            self._refresh_soundboard_ui()
 
     # ── Styles ────────────────────────────────────────────────────────────────
 
@@ -2243,12 +2352,14 @@ class MicToolApp(tk.Tk):
         speak_outer = tk.Frame(nb, bg=BG)
         sing_outer  = tk.Frame(nb, bg=BG)
         voice_outer = tk.Frame(nb, bg=BG)
+        soundboard_outer = tk.Frame(nb, bg=BG)
         hotkey_outer = tk.Frame(nb, bg=BG)
         help_outer  = tk.Frame(nb, bg=BG)
         about_outer = tk.Frame(nb, bg=BG)
         nb.add(speak_outer, text=f"  🎤  {t('tab_speaking')}  ")
         nb.add(sing_outer,  text=f"  🎵  {t('tab_singing')}  ")
         nb.add(voice_outer, text=f"  🎙  {t('tab_voice')}  ")
+        nb.add(soundboard_outer, text=f"  🔊  {t('tab_soundboard')}  ")
         nb.add(hotkey_outer, text=f"  ⌨  {t('tab_hotkeys')}  ")
         nb.add(help_outer,  text=f"  ❓  {t('tab_help')}  ")
         nb.add(about_outer, text=f"  ℹ  {t('tab_about')}  ")
@@ -2256,6 +2367,7 @@ class MicToolApp(tk.Tk):
             (speak_outer, '🎤', 'tab_speaking'),
             (sing_outer,  '🎵', 'tab_singing'),
             (voice_outer, '🎙', 'tab_voice'),
+            (soundboard_outer, '🔊', 'tab_soundboard'),
             (hotkey_outer, '⌨', 'tab_hotkeys'),
             (help_outer,  '❓', 'tab_help'),
             (about_outer, 'ℹ',  'tab_about'),
@@ -2269,6 +2381,9 @@ class MicToolApp(tk.Tk):
 
         voice_scroll = ScrollFrame(voice_outer)
         self._build_voice_panel(voice_scroll)
+
+        soundboard_scroll = ScrollFrame(soundboard_outer)
+        self._build_soundboard_panel(soundboard_scroll)
 
         hotkey_scroll = ScrollFrame(hotkey_outer)
         self._build_hotkeys_panel(hotkey_scroll)
@@ -2989,6 +3104,139 @@ class MicToolApp(tk.Tk):
 
         self._refresh_voice_btns()
 
+    def _build_soundboard_panel(self, parent: tk.Frame):
+        p = tk.Frame(parent, bg=BG, padx=12, pady=8)
+        p.pack(fill='x')
+
+        tk.Label(p, textvariable=_mkvar('soundboard_intro'),
+                 font=("Segoe UI", 9), bg=BG, fg=FG,
+                 justify='left', anchor='w', wraplength=500).pack(fill='x', pady=(0, 2))
+        tk.Label(p, textvariable=_mkvar('soundboard_intro2'),
+                 font=("Segoe UI", 9), bg=BG, fg=SUB,
+                 justify='left', anchor='w', wraplength=500).pack(fill='x', pady=(0, 8))
+
+        row = tk.Frame(p, bg=BG)
+        row.pack(fill='x', pady=(0, 8))
+        btn_import = tk.Button(row, text=t('soundboard_import'),
+                               font=("Segoe UI", 9, "bold"),
+                               bg=BLUE, fg=BG, activebackground=BLUE,
+                               bd=0, padx=12, pady=5,
+                               command=self._import_soundboard_files)
+        btn_import.pack(side='left', padx=(0, 6))
+        self._i18n_buttons.append((btn_import, 'soundboard_import'))
+        btn_clear = tk.Button(row, text=t('soundboard_clear'),
+                              font=("Segoe UI", 9),
+                              bg=BG3, fg=FG, activebackground=BG3,
+                              bd=0, padx=10, pady=5,
+                              command=self._clear_soundboard)
+        btn_clear.pack(side='left')
+        self._i18n_buttons.append((btn_clear, 'soundboard_clear'))
+
+        s = self._section(p, 'soundboard_list_title')
+        s.pack(fill='x', pady=(0, 6))
+        self._soundboard_list_frame = tk.Frame(s, bg=BG2)
+        self._soundboard_list_frame.pack(fill='x', padx=4, pady=(4, 6))
+        self._soundboard_empty_lbl = tk.Label(
+            self._soundboard_list_frame,
+            text=t('soundboard_empty'),
+            font=("Segoe UI", 9),
+            bg=BG2, fg=SUB, anchor='w', justify='left',
+        )
+        self._soundboard_empty_lbl.pack(fill='x', pady=2)
+        self._soundboard_rows.append((self._soundboard_empty_lbl, 'soundboard_empty'))
+
+    def _refresh_soundboard_ui(self):
+        if self._soundboard_list_frame is None:
+            return
+        for child in list(self._soundboard_list_frame.winfo_children()):
+            child.destroy()
+        self._soundboard_rows = []
+        if not self._soundboard_items:
+            self._soundboard_empty_lbl = tk.Label(
+                self._soundboard_list_frame,
+                text=t('soundboard_empty'),
+                font=("Segoe UI", 9),
+                bg=BG2, fg=SUB, anchor='w', justify='left',
+            )
+            self._soundboard_empty_lbl.pack(fill='x', pady=2)
+            self._soundboard_rows.append((self._soundboard_empty_lbl, 'soundboard_empty'))
+            return
+        for item in self._soundboard_items:
+            row = tk.Frame(self._soundboard_list_frame, bg=BG2)
+            row.pack(fill='x', pady=2)
+            text = f"{item['name']}  ({Path(item['path']).suffix.lower() or '.wav'})"
+            tk.Label(row, text=text, font=("Segoe UI", 9),
+                     bg=BG2, fg=FG, anchor='w').pack(side='left', fill='x', expand=True)
+            btn_play = tk.Button(
+                row, text=t('soundboard_play'),
+                font=("Segoe UI", 8), bg=BG3, fg=BLUE, bd=0, padx=8, pady=4,
+                command=lambda key=item['path']: self._play_soundboard_item(key),
+            )
+            btn_play.pack(side='left', padx=(6, 4))
+            btn_remove = tk.Button(
+                row, text=t('soundboard_remove'),
+                font=("Segoe UI", 8), bg=BG3, fg=SUB, bd=0, padx=8, pady=4,
+                command=lambda key=item['path']: self._remove_soundboard_item(key),
+            )
+            btn_remove.pack(side='left')
+
+    def _add_soundboard_file(self, path: str, *, quiet: bool = False) -> bool:
+        p = Path(path)
+        if not p.exists():
+            return False
+        if any(item['path'] == str(p) for item in self._soundboard_items):
+            return False
+        samples = SoundboardMixer.load_file(str(p))
+        self._soundboard_items.append({
+            'path': str(p),
+            'name': p.stem,
+            'samples': samples,
+        })
+        self._refresh_soundboard_ui()
+        if not quiet:
+            self._status(t('status_sound_added'), BLUE)
+        return True
+
+    def _import_soundboard_files(self):
+        if sf is None:
+            messagebox.showerror(t('err_sound_load_title'), t('soundboard_missing_backend'))
+            return
+        paths = filedialog.askopenfilenames(
+            title=t('soundboard_import_title'),
+            filetypes=[
+                ("Audio Files", "*.wav *.mp3 *.flac *.ogg *.aiff *.aif"),
+                ("All Files", "*.*"),
+            ],
+        )
+        added = 0
+        for path in paths:
+            try:
+                if self._add_soundboard_file(path, quiet=True):
+                    added += 1
+            except Exception as exc:
+                messagebox.showerror(t('err_sound_load_title'), f"{Path(path).name}\n\n{exc}")
+                break
+        if added:
+            self._status(t('status_sound_added'), BLUE)
+
+    def _play_soundboard_item(self, path: str):
+        for item in self._soundboard_items:
+            if item['path'] == path:
+                self.engine.soundboard.trigger(item['samples'])
+                self._status(t('status_sound_played'), BLUE)
+                break
+
+    def _remove_soundboard_item(self, path: str):
+        self._soundboard_items = [item for item in self._soundboard_items if item['path'] != path]
+        self._refresh_soundboard_ui()
+        self._status(t('status_sound_removed'), SUB)
+
+    def _clear_soundboard(self):
+        self._soundboard_items.clear()
+        self.engine.soundboard.clear()
+        self._refresh_soundboard_ui()
+        self._status(t('status_sound_cleared'), SUB)
+
     def _build_hotkeys_panel(self, parent: tk.Frame):
         p = tk.Frame(parent, bg=BG, padx=12, pady=8)
         p.pack(fill='x')
@@ -3420,6 +3668,7 @@ class MicToolApp(tk.Tk):
             "mode":        self.engine.mode,
             "voice_mode":  self.engine.pitch.mode,
             "hotkeys":     self._hotkey_bindings,
+            "soundboard_files": [item['path'] for item in self._soundboard_items],
             "sliders":     self._collect_slider_values(),
         }
         try:
@@ -3468,6 +3717,14 @@ class MicToolApp(tk.Tk):
         for action_id, combo in data.get("hotkeys", {}).items():
             if action_id in self._hotkey_vars:
                 self._set_hotkey_binding(action_id, combo)
+        self._soundboard_items.clear()
+        self.engine.soundboard.clear()
+        for path in data.get("soundboard_files", []):
+            try:
+                self._add_soundboard_file(path, quiet=True)
+            except Exception:
+                pass
+        self._refresh_soundboard_ui()
         # Sliders — setting each var fires the trace → updates the engine
         for name, val in data.get("sliders", {}).items():
             obj = getattr(self, name, None)
@@ -3477,14 +3734,96 @@ class MicToolApp(tk.Tk):
                 except Exception:
                     pass
 
+    def _create_tray_image(self):
+        if Image is None or ImageDraw is None:
+            return None
+        img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        draw.rounded_rectangle((6, 6, 58, 58), radius=16, fill=tuple(int(BG2[i:i+2], 16) for i in (1, 3, 5)) + (255,))
+        draw.ellipse((16, 12, 48, 44), fill=tuple(int(BLUE[i:i+2], 16) for i in (1, 3, 5)) + (255,))
+        draw.rectangle((28, 34, 36, 52), fill=tuple(int(FG[i:i+2], 16) for i in (1, 3, 5)) + (255,))
+        return img
+
+    def _ensure_tray_icon(self) -> bool:
+        if self._tray_icon is not None:
+            return True
+        if pystray is None:
+            return False
+        image = self._create_tray_image()
+        if image is None:
+            return False
+        menu = pystray.Menu(
+            pystray.MenuItem(t('tray_restore'), lambda icon, item: self.after(0, self._restore_from_tray)),
+            pystray.MenuItem(t('tray_quit'), lambda icon, item: self.after(0, self._quit_from_tray)),
+        )
+        self._tray_icon = pystray.Icon("MicTool", image, "MicTool", menu)
+        return True
+
+    def _show_tray_icon(self):
+        if not self._ensure_tray_icon() or self._tray_icon is None:
+            return False
+        if self._tray_ready:
+            return True
+
+        def _run():
+            try:
+                self._tray_ready = True
+                self._tray_icon.run()
+            finally:
+                self._tray_ready = False
+
+        self._tray_thread = threading.Thread(target=_run, daemon=True)
+        self._tray_thread.start()
+        return True
+
+    def _stop_tray_icon(self):
+        if self._tray_icon is not None:
+            try:
+                self._tray_icon.stop()
+            except Exception:
+                pass
+        self._tray_ready = False
+
+    def _hide_to_tray(self):
+        if self._is_quitting:
+            return
+        if not self._show_tray_icon():
+            messagebox.showinfo(t('err_tray_unavailable_title'), t('err_tray_unavailable_body'))
+            return
+        self.withdraw()
+        self._status(t('status_sent_to_tray'), BLUE)
+
+    def _restore_from_tray(self):
+        self.deiconify()
+        self.state('normal')
+        self.lift()
+        self.focus_force()
+        self._stop_tray_icon()
+
+    def _quit_from_tray(self):
+        self._on_close()
+
+    def _on_window_unmap(self, _event=None):
+        if self._is_quitting:
+            return
+        try:
+            if self.state() == 'iconic':
+                self.after(0, self._hide_to_tray)
+        except Exception:
+            pass
+
     def _status(self, msg: str, color: str = SUB):
         """Show a brief status message next to the Save button."""
         self._status_lbl.config(text=msg, fg=color)
         self.after(3000, lambda: self._status_lbl.config(text="", fg=SUB))
 
     def _on_close(self):
+        if self._is_quitting:
+            return
+        self._is_quitting = True
         self._cancel_hotkey_capture()
         self._save_settings()   # auto-save on exit
+        self._stop_tray_icon()
         self._hotkeys.stop()
         self.engine.stop()
         self.destroy()

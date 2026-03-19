@@ -2,3 +2,6 @@ sounddevice>=0.4.6
 numpy>=1.24
 scipy>=1.11
 pynput>=1.7
+soundfile>=0.12
+pystray>=0.19
+Pillow>=10.0
