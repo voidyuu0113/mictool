@@ -19,7 +19,6 @@ import json
 import queue
 import threading
 import ctypes
-from ctypes import wintypes
 import webbrowser
 from pathlib import Path
 
@@ -29,59 +28,20 @@ except Exception:
     sf = None
 
 try:
+    import pystray
+    from PIL import Image, ImageDraw
+except Exception:
+    pystray = None
+    Image = None
+    ImageDraw = None
+
+try:
     from pynput import keyboard as pynput_keyboard, mouse as pynput_mouse
 except Exception:
     pynput_keyboard = None
     pynput_mouse = None
 
 SETTINGS_FILE = Path(__file__).parent / "settings.json"
-
-WM_APP = 0x8000
-WM_LBUTTONUP = 0x0202
-WM_RBUTTONUP = 0x0205
-TRAY_CALLBACK_MSG = WM_APP + 1
-NIM_ADD = 0x00000000
-NIM_MODIFY = 0x00000001
-NIM_DELETE = 0x00000002
-NIF_MESSAGE = 0x00000001
-NIF_ICON = 0x00000002
-NIF_TIP = 0x00000004
-IDI_APPLICATION = 32512
-GWL_WNDPROC = -4
-MF_STRING = 0x00000000
-TPM_RETURNCMD = 0x0100
-TPM_NONOTIFY = 0x0080
-TRAY_CMD_RESTORE = 1001
-TRAY_CMD_QUIT = 1002
-LONG_PTR = ctypes.c_ssize_t
-LRESULT = LONG_PTR
-
-
-class POINT(ctypes.Structure):
-    _fields_ = [
-        ("x", wintypes.LONG),
-        ("y", wintypes.LONG),
-    ]
-
-
-class NOTIFYICONDATAW(ctypes.Structure):
-    _fields_ = [
-        ("cbSize", wintypes.DWORD),
-        ("hWnd", wintypes.HWND),
-        ("uID", wintypes.UINT),
-        ("uFlags", wintypes.UINT),
-        ("uCallbackMessage", wintypes.UINT),
-        ("hIcon", wintypes.HICON),
-        ("szTip", wintypes.WCHAR * 128),
-        ("dwState", wintypes.DWORD),
-        ("dwStateMask", wintypes.DWORD),
-        ("szInfo", wintypes.WCHAR * 256),
-        ("uTimeoutOrVersion", wintypes.UINT),
-        ("szInfoTitle", wintypes.WCHAR * 64),
-        ("dwInfoFlags", wintypes.DWORD),
-        ("guidItem", ctypes.c_byte * 16),
-        ("hBalloonIcon", wintypes.HICON),
-    ]
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  i18n — Internationalisation
@@ -2319,19 +2279,14 @@ class MicToolApp(tk.Tk):
         self._soundboard_rows: list[tuple[tk.Widget, str]] = []
         self._soundboard_empty_lbl: tk.Label | None = None
         self._soundboard_list_frame: tk.Frame | None = None
-        self._tray_icon_added = False
+        self._tray_icon = None
+        self._tray_ready = False
         self._tray_supported: bool | None = None
-        self._tray_hwnd = None
-        self._tray_icon_handle = None
-        self._tray_wndproc = None
-        self._tray_old_wndproc = None
         self._is_quitting = False
         self._hotkeys.start()
         self._apply_styles()
         self._build_ui()
         self._auto_load()     # restore last session
-        self.update_idletasks()
-        self._init_native_tray()
         self._vu_loop()
         self._hotkey_loop()
         self._soundboard_loop()
@@ -3871,135 +3826,63 @@ class MicToolApp(tk.Tk):
                 except Exception:
                     pass
 
-    def _init_native_tray(self):
+    def _create_tray_image(self):
+        if Image is None or ImageDraw is None:
+            return None
+        img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        draw.rounded_rectangle((6, 6, 58, 58), radius=16, fill=tuple(int(BG2[i:i+2], 16) for i in (1, 3, 5)) + (255,))
+        draw.ellipse((16, 12, 48, 44), fill=tuple(int(BLUE[i:i+2], 16) for i in (1, 3, 5)) + (255,))
+        draw.rectangle((28, 34, 36, 52), fill=tuple(int(FG[i:i+2], 16) for i in (1, 3, 5)) + (255,))
+        return img
+
+    def _ensure_tray_icon(self) -> bool:
         if self._tray_supported is False:
-            return
-        user32 = ctypes.windll.user32
-        if ctypes.sizeof(ctypes.c_void_p) == ctypes.sizeof(ctypes.c_longlong):
-            set_wndproc = user32.SetWindowLongPtrW
-            get_wndproc = user32.GetWindowLongPtrW
-        else:
-            set_wndproc = user32.SetWindowLongW
-            get_wndproc = user32.GetWindowLongW
-        set_wndproc.argtypes = [wintypes.HWND, ctypes.c_int, LONG_PTR]
-        set_wndproc.restype = LONG_PTR
-        get_wndproc.argtypes = [wintypes.HWND, ctypes.c_int]
-        get_wndproc.restype = LONG_PTR
-        call_wndproc = user32.CallWindowProcW
-        call_wndproc.argtypes = [LONG_PTR, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
-        call_wndproc.restype = LRESULT
-        hwnd = wintypes.HWND(self.winfo_id())
-        self._tray_hwnd = hwnd
-        user32.LoadIconW.restype = wintypes.HICON
-        self._tray_icon_handle = user32.LoadIconW(None, IDI_APPLICATION)
-        WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
-
-        def _window_proc(hWnd, msg, wParam, lParam):
-            try:
-                if msg == TRAY_CALLBACK_MSG:
-                    if lParam == WM_LBUTTONUP:
-                        self.after(0, self._restore_from_tray)
-                        return 0
-                    if lParam == WM_RBUTTONUP:
-                        self.after(0, self._show_tray_menu)
-                        return 0
-                if self._tray_old_wndproc:
-                    return call_wndproc(self._tray_old_wndproc, hWnd, msg, wParam, lParam)
-            except Exception:
-                return 0
-            return 0
-
+            return False
+        if self._tray_icon is not None:
+            return True
+        if pystray is None:
+            self._tray_supported = False
+            return False
         try:
-            self._tray_wndproc = WNDPROC(_window_proc)
-            self._tray_old_wndproc = LONG_PTR(get_wndproc(hwnd, GWL_WNDPROC))
-            set_wndproc(hwnd, GWL_WNDPROC, ctypes.cast(self._tray_wndproc, ctypes.c_void_p).value)
+            image = self._create_tray_image()
+            if image is None:
+                self._tray_supported = False
+                return False
+            menu = pystray.Menu(
+                pystray.MenuItem(t('tray_restore'), lambda icon, item: self.after(0, self._restore_from_tray), default=True),
+                pystray.MenuItem(t('tray_quit'), lambda icon, item: self.after(0, self._quit_from_tray)),
+            )
+            self._tray_icon = pystray.Icon("MicTool", image, "MicTool", menu)
             self._tray_supported = True
+            return True
         except Exception:
             self._tray_supported = False
-            self._tray_wndproc = None
-            self._tray_old_wndproc = None
-
-    def _build_notify_icon_data(self) -> NOTIFYICONDATAW:
-        data = NOTIFYICONDATAW()
-        data.cbSize = ctypes.sizeof(NOTIFYICONDATAW)
-        data.hWnd = self._tray_hwnd
-        data.uID = 1
-        data.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP
-        data.uCallbackMessage = TRAY_CALLBACK_MSG
-        data.hIcon = self._tray_icon_handle
-        data.szTip = "MicTool"
-        return data
+            self._tray_icon = None
+            return False
 
     def _show_tray_icon(self):
-        if self._tray_supported is not True or self._tray_hwnd is None:
+        if not self._ensure_tray_icon() or self._tray_icon is None:
             return False
-        if self._tray_icon_added:
+        if self._tray_ready:
             return True
         try:
-            data = self._build_notify_icon_data()
-            ok = ctypes.windll.shell32.Shell_NotifyIconW(NIM_ADD, ctypes.byref(data))
-            self._tray_icon_added = bool(ok)
-            return self._tray_icon_added
+            self._tray_icon.run_detached()
+            self._tray_ready = True
+            return True
         except Exception:
             self._tray_supported = False
-            self._tray_icon_added = False
+            self._tray_icon = None
+            self._tray_ready = False
             return False
 
     def _stop_tray_icon(self):
-        if self._tray_icon_added and self._tray_hwnd is not None:
+        if self._tray_icon is not None:
             try:
-                data = self._build_notify_icon_data()
-                ctypes.windll.shell32.Shell_NotifyIconW(NIM_DELETE, ctypes.byref(data))
+                self._tray_icon.stop()
             except Exception:
                 pass
-        self._tray_icon_added = False
-
-    def _show_tray_menu(self):
-        if self._tray_hwnd is None:
-            return
-        menu = ctypes.windll.user32.CreatePopupMenu()
-        if not menu:
-            return
-        try:
-            ctypes.windll.user32.AppendMenuW(menu, MF_STRING, TRAY_CMD_RESTORE, t('tray_restore'))
-            ctypes.windll.user32.AppendMenuW(menu, MF_STRING, TRAY_CMD_QUIT, t('tray_quit'))
-            pt = POINT()
-            ctypes.windll.user32.GetCursorPos(ctypes.byref(pt))
-            ctypes.windll.user32.SetForegroundWindow(self._tray_hwnd)
-            cmd = ctypes.windll.user32.TrackPopupMenu(
-                menu,
-                TPM_RETURNCMD | TPM_NONOTIFY,
-                pt.x,
-                pt.y,
-                0,
-                self._tray_hwnd,
-                None,
-            )
-            if cmd == TRAY_CMD_RESTORE:
-                self._restore_from_tray()
-            elif cmd == TRAY_CMD_QUIT:
-                self._quit_from_tray()
-        finally:
-            ctypes.windll.user32.DestroyMenu(menu)
-
-    def _cleanup_native_tray(self):
-        self._stop_tray_icon()
-        if self._tray_hwnd is None or self._tray_old_wndproc is None:
-            return
-        try:
-            user32 = ctypes.windll.user32
-            if ctypes.sizeof(ctypes.c_void_p) == ctypes.sizeof(ctypes.c_longlong):
-                user32.SetWindowLongPtrW.argtypes = [wintypes.HWND, ctypes.c_int, LONG_PTR]
-                user32.SetWindowLongPtrW.restype = LONG_PTR
-                user32.SetWindowLongPtrW(self._tray_hwnd, GWL_WNDPROC, self._tray_old_wndproc)
-            else:
-                user32.SetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int, LONG_PTR]
-                user32.SetWindowLongW.restype = LONG_PTR
-                user32.SetWindowLongW(self._tray_hwnd, GWL_WNDPROC, self._tray_old_wndproc)
-        except Exception:
-            pass
-        self._tray_old_wndproc = None
-        self._tray_wndproc = None
+        self._tray_ready = False
 
     def _hide_to_tray(self):
         if self._is_quitting:
@@ -4041,7 +3924,7 @@ class MicToolApp(tk.Tk):
         self._is_quitting = True
         self._cancel_hotkey_capture()
         self._save_settings()   # auto-save on exit
-        self._cleanup_native_tray()
+        self._stop_tray_icon()
         self._hotkeys.stop()
         self.engine.stop()
         self.destroy()
