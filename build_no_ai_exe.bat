@@ -23,7 +23,7 @@ if errorlevel 1 (
   --noconfirm ^
   --clean ^
   --noconsole ^
-  --onefile ^
+  --onedir ^
   --name MicTool-NoAI ^
   --add-binary "%~dp0MicToolCapture.dll;." ^
   mictool.py
@@ -35,5 +35,5 @@ if errorlevel 1 (
 )
 
 echo.
-echo Build complete: dist\MicTool-NoAI.exe
+echo Build complete: dist\MicTool-NoAI\MicTool-NoAI.exe
 pause
