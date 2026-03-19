@@ -20,6 +20,7 @@ import queue
 import threading
 import ctypes
 import webbrowser
+from datetime import datetime
 from pathlib import Path
 
 try:
@@ -42,6 +43,7 @@ except Exception:
     pynput_mouse = None
 
 SETTINGS_FILE = Path(__file__).parent / "settings.json"
+ERROR_LOG_FILE = Path(__file__).parent / "error.log"
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  i18n — Internationalisation
@@ -3847,6 +3849,7 @@ class MicToolApp(tk.Tk):
         try:
             image = self._create_tray_image()
             if image is None:
+                self._log_error("tray create image returned None")
                 self._tray_supported = False
                 return False
             menu = pystray.Menu(
@@ -3856,7 +3859,8 @@ class MicToolApp(tk.Tk):
             self._tray_icon = pystray.Icon("MicTool", image, "MicTool", menu)
             self._tray_supported = True
             return True
-        except Exception:
+        except Exception as exc:
+            self._log_error("tray ensure icon failed", exc)
             self._tray_supported = False
             self._tray_icon = None
             return False
@@ -3870,7 +3874,8 @@ class MicToolApp(tk.Tk):
             self._tray_icon.run_detached()
             self._tray_ready = True
             return True
-        except Exception:
+        except Exception as exc:
+            self._log_error("tray run_detached failed", exc)
             self._tray_supported = False
             self._tray_icon = None
             self._tray_ready = False
@@ -3880,14 +3885,15 @@ class MicToolApp(tk.Tk):
         if self._tray_icon is not None:
             try:
                 self._tray_icon.stop()
-            except Exception:
-                pass
+            except Exception as exc:
+                self._log_error("tray stop failed", exc)
         self._tray_ready = False
 
     def _hide_to_tray(self):
         if self._is_quitting:
             return
         if not self._show_tray_icon():
+            self._log_error("tray hide aborted because show_tray_icon returned False")
             return
         self.withdraw()
         self._status(t('status_sent_to_tray'), BLUE)
@@ -3917,6 +3923,20 @@ class MicToolApp(tk.Tk):
         """Show a brief status message next to the Save button."""
         self._status_lbl.config(text=msg, fg=color)
         self.after(3000, lambda: self._status_lbl.config(text="", fg=SUB))
+
+    def _log_error(self, context: str, exc: Exception | None = None):
+        try:
+            stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            lines = [f"[{stamp}] {context}"]
+            if exc is not None:
+                lines.append(f"{type(exc).__name__}: {exc}")
+            ERROR_LOG_FILE.write_text(
+                (ERROR_LOG_FILE.read_text(encoding='utf-8') if ERROR_LOG_FILE.exists() else "") +
+                "\n".join(lines) + "\n\n",
+                encoding='utf-8'
+            )
+        except Exception:
+            pass
 
     def _on_close(self):
         if self._is_quitting:
