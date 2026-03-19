@@ -53,6 +53,8 @@ TPM_RETURNCMD = 0x0100
 TPM_NONOTIFY = 0x0080
 TRAY_CMD_RESTORE = 1001
 TRAY_CMD_QUIT = 1002
+LONG_PTR = ctypes.c_ssize_t
+LRESULT = LONG_PTR
 
 
 class POINT(ctypes.Structure):
@@ -3872,32 +3874,46 @@ class MicToolApp(tk.Tk):
     def _init_native_tray(self):
         if self._tray_supported is False:
             return
+        user32 = ctypes.windll.user32
         if ctypes.sizeof(ctypes.c_void_p) == ctypes.sizeof(ctypes.c_longlong):
-            set_wndproc = ctypes.windll.user32.SetWindowLongPtrW
-            get_wndproc = ctypes.windll.user32.GetWindowLongPtrW
+            set_wndproc = user32.SetWindowLongPtrW
+            get_wndproc = user32.GetWindowLongPtrW
         else:
-            set_wndproc = ctypes.windll.user32.SetWindowLongW
-            get_wndproc = ctypes.windll.user32.GetWindowLongW
-        call_wndproc = ctypes.windll.user32.CallWindowProcW
+            set_wndproc = user32.SetWindowLongW
+            get_wndproc = user32.GetWindowLongW
+        set_wndproc.argtypes = [wintypes.HWND, ctypes.c_int, LONG_PTR]
+        set_wndproc.restype = LONG_PTR
+        get_wndproc.argtypes = [wintypes.HWND, ctypes.c_int]
+        get_wndproc.restype = LONG_PTR
+        call_wndproc = user32.CallWindowProcW
+        call_wndproc.argtypes = [LONG_PTR, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+        call_wndproc.restype = LRESULT
         hwnd = wintypes.HWND(self.winfo_id())
         self._tray_hwnd = hwnd
-        self._tray_icon_handle = ctypes.windll.user32.LoadIconW(None, IDI_APPLICATION)
-        WNDPROC = ctypes.WINFUNCTYPE(ctypes.c_longlong, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
+        user32.LoadIconW.argtypes = [wintypes.HINSTANCE, ctypes.c_wchar_p]
+        user32.LoadIconW.restype = wintypes.HICON
+        self._tray_icon_handle = user32.LoadIconW(None, IDI_APPLICATION)
+        WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
 
         def _window_proc(hWnd, msg, wParam, lParam):
-            if msg == TRAY_CALLBACK_MSG:
-                if lParam == WM_LBUTTONUP:
-                    self.after(0, self._restore_from_tray)
-                    return 0
-                if lParam == WM_RBUTTONUP:
-                    self.after(0, self._show_tray_menu)
-                    return 0
-            return call_wndproc(self._tray_old_wndproc, hWnd, msg, wParam, lParam)
+            try:
+                if msg == TRAY_CALLBACK_MSG:
+                    if lParam == WM_LBUTTONUP:
+                        self.after(0, self._restore_from_tray)
+                        return 0
+                    if lParam == WM_RBUTTONUP:
+                        self.after(0, self._show_tray_menu)
+                        return 0
+                if self._tray_old_wndproc:
+                    return call_wndproc(self._tray_old_wndproc, hWnd, msg, wParam, lParam)
+            except Exception:
+                return 0
+            return 0
 
         try:
             self._tray_wndproc = WNDPROC(_window_proc)
-            self._tray_old_wndproc = get_wndproc(hwnd, GWL_WNDPROC)
-            set_wndproc(hwnd, GWL_WNDPROC, self._tray_wndproc)
+            self._tray_old_wndproc = LONG_PTR(get_wndproc(hwnd, GWL_WNDPROC))
+            set_wndproc(hwnd, GWL_WNDPROC, ctypes.cast(self._tray_wndproc, ctypes.c_void_p).value)
             self._tray_supported = True
         except Exception:
             self._tray_supported = False
@@ -3972,10 +3988,15 @@ class MicToolApp(tk.Tk):
         if self._tray_hwnd is None or self._tray_old_wndproc is None:
             return
         try:
+            user32 = ctypes.windll.user32
             if ctypes.sizeof(ctypes.c_void_p) == ctypes.sizeof(ctypes.c_longlong):
-                ctypes.windll.user32.SetWindowLongPtrW(self._tray_hwnd, GWL_WNDPROC, self._tray_old_wndproc)
+                user32.SetWindowLongPtrW.argtypes = [wintypes.HWND, ctypes.c_int, LONG_PTR]
+                user32.SetWindowLongPtrW.restype = LONG_PTR
+                user32.SetWindowLongPtrW(self._tray_hwnd, GWL_WNDPROC, self._tray_old_wndproc)
             else:
-                ctypes.windll.user32.SetWindowLongW(self._tray_hwnd, GWL_WNDPROC, self._tray_old_wndproc)
+                user32.SetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int, LONG_PTR]
+                user32.SetWindowLongW.restype = LONG_PTR
+                user32.SetWindowLongW(self._tray_hwnd, GWL_WNDPROC, self._tray_old_wndproc)
         except Exception:
             pass
         self._tray_old_wndproc = None
