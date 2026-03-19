@@ -25,7 +25,9 @@ if errorlevel 1 (
   --noconsole ^
   --onedir ^
   --name MicTool-NoAI ^
+  --icon "%~dp0ico\f3bte-osrj6-001.ico" ^
   --add-binary "%~dp0MicToolCapture.dll;." ^
+  --add-data "%~dp0ico;ico" ^
   mictool.py
 
 if errorlevel 1 (

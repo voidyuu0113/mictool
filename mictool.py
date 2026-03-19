@@ -20,6 +20,7 @@ import queue
 import threading
 import ctypes
 import webbrowser
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -42,9 +43,11 @@ except Exception:
     pynput_keyboard = None
     pynput_mouse = None
 
-SETTINGS_FILE = Path(__file__).parent / "settings.json"
-ERROR_LOG_FILE = Path(__file__).parent / "error.log"
-TRAY_ICON_FILE = Path(__file__).parent / "ico" / "f3bte-osrj6-001.ico"
+APP_DIR = Path(sys.executable).parent if getattr(sys, 'frozen', False) else Path(__file__).parent
+RESOURCE_DIR = Path(getattr(sys, '_MEIPASS', APP_DIR))
+SETTINGS_FILE = APP_DIR / "settings.json"
+ERROR_LOG_FILE = APP_DIR / "error.log"
+TRAY_ICON_FILE = RESOURCE_DIR / "ico" / "f3bte-osrj6-001.ico"
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  i18n — Internationalisation
@@ -2268,6 +2271,7 @@ class MicToolApp(tk.Tk):
         super().__init__()
         # Load language preference before building UI so t() returns correctly
         self._load_language_from_settings()
+        self._apply_window_icon()
         self.title("MicTool  —  Real-time Mic Processor")
         self.configure(bg=BG)
         self.resizable(True, True)
@@ -2305,6 +2309,18 @@ class MicToolApp(tk.Tk):
         self._soundboard_loop()
         self.bind('<Unmap>', self._on_window_unmap)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    def _apply_window_icon(self):
+        if not TRAY_ICON_FILE.exists():
+            return
+        try:
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("voidyuu.mictool.noai")
+        except Exception:
+            pass
+        try:
+            self.iconbitmap(default=str(TRAY_ICON_FILE))
+        except Exception as exc:
+            self._log_error(f"window icon apply failed: {TRAY_ICON_FILE}", exc)
 
     @staticmethod
     def _load_language_from_settings():
