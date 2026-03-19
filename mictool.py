@@ -3890,7 +3890,6 @@ class MicToolApp(tk.Tk):
         call_wndproc.restype = LRESULT
         hwnd = wintypes.HWND(self.winfo_id())
         self._tray_hwnd = hwnd
-        user32.LoadIconW.argtypes = [wintypes.HINSTANCE, ctypes.c_wchar_p]
         user32.LoadIconW.restype = wintypes.HICON
         self._tray_icon_handle = user32.LoadIconW(None, IDI_APPLICATION)
         WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
