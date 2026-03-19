@@ -3904,6 +3904,7 @@ class MicToolApp(tk.Tk):
                 self._tray_icon.stop()
             except Exception as exc:
                 self._log_error("tray stop failed", exc)
+            self._tray_icon = None
         self._tray_ready = False
         self._tray_failure_logged = False
 
