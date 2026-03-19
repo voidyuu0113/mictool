@@ -1,9 +1,15 @@
-# MicTool — 安裝與使用說明
+# MicTool — 安裝與使用說明（純 DSP 版）
 
 ## 安裝環境
 
 ```bash
 pip install sounddevice numpy scipy
+```
+
+建議另外安裝 `pyinstaller` 以便打包成 `.exe`：
+
+```bash
+pip install pyinstaller
 ```
 
 ## 啟動
@@ -27,6 +33,7 @@ python mictool.py
 | ⊘ Bypass | 直通原始麥克風，用於效果對比 |
 | 🎤 Speaking | 說話模式：高通 + EQ + 壓縮，無殘響，清晰明亮 |
 | 🎵 Singing | 唱歌模式：音色優化 EQ + 動態壓縮 + Reverb |
+| 🎙 Voice | 非 AI 即時變聲：Robot / Chipmunk / Deep / Female / Male / Custom |
 
 ## 參數說明
 
@@ -55,4 +62,18 @@ python mictool.py
 如出現雜音/爆音，可把 `mictool.py` 第一行常數改為：
 ```python
 BLOCK = 1024   # 約 23ms，更穩定
+```
+
+## 打包成 EXE
+
+在專案根目錄執行：
+
+```bash
+pyinstaller --noconsole --onefile --name MicTool-NoAI mictool.py
+```
+
+輸出檔會在：
+
+```text
+dist/MicTool-NoAI.exe
 ```

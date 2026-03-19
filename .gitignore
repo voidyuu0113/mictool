@@ -10,6 +10,7 @@ __pycache__/
 
 venv/
 venv_rvc/
+venv_build/
 .venv/
 
 build/

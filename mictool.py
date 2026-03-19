@@ -13,7 +13,7 @@ Dependencies:
 import numpy as np
 import sounddevice as sd
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox
 import scipy.signal as sci_signal
 import json
 import queue
@@ -54,7 +54,6 @@ _STRINGS: dict[str, dict[str, str]] = {
     'sec_robot':         {'zh_tw': 'Robot — 載波頻率', 'en': 'Robot — Carrier Frequency', 'ja': 'Robot — Carrier Frequency', 'ko': 'Robot — 캐리어 주파수'},
     'sec_custom_pitch':  {'zh_tw': 'Custom Pitch Shift', 'en': 'Custom Pitch Shift', 'ja': 'Custom Pitch Shift', 'ko': 'Custom Pitch Shift'},
     'sec_gender_tune':   {'zh_tw': 'Gender Fine-Tune  (Female / Male)', 'en': 'Gender Fine-Tune  (Female / Male)', 'ja': 'Gender Fine-Tune  (Female / Male)', 'ko': 'Gender Fine-Tune  (Female / Male)'},
-    'sec_neural_vc':     {'zh_tw': '🧠  Neural Voice Conversion  (RVC)', 'en': '🧠  Neural Voice Conversion  (RVC)', 'ja': '🧠  Neural Voice Conversion  (RVC)', 'ko': '🧠  Neural Voice Conversion  (RVC)'},
     'sec_app_loopback':  {'zh_tw': '🔊  App Audio Loopback', 'en': '🔊  App Audio Loopback', 'ja': '🔊  App Audio Loopback', 'ko': '🔊  App Audio Loopback'},
     # ── Slider labels ─────────────────────────────────────────────────────────
     'lbl_threshold': {'zh_tw': 'Threshold', 'en': 'Threshold', 'ja': 'Threshold', 'ko': 'Threshold'},
@@ -556,105 +555,6 @@ _STRINGS: dict[str, dict[str, str]] = {
         'ja':    '  < 1.0 = フォルマント低め（男性寄り）  •  > 1.0 = フォルマント高め（女性寄り）',
         'ko':    '  < 1.0 = 낮은 포르만트(남성적)  •  > 1.0 = 높은 포르만트(여성적)',
     },
-    'nvc_info_gpu': {
-        'zh_tw': '⚡ RTX GPU — RVC 推論約 20 ms/chunk，總延遲約 400 ms（適合 OBS 直播）',
-        'en':    '⚡ RTX GPU — RVC inference ~20 ms/chunk, total latency ~400 ms (good for OBS live use)',
-        'ja':    '⚡ RTX GPU — RVC 推論は約20ms/chunk、総遅延は約400ms（OBS配信向け）',
-        'ko':    '⚡ RTX GPU — RVC 추론 약 20ms/chunk, 총 지연 약 400ms (OBS 라이브에 적합)',
-    },
-    'nvc_info_replace': {
-        'zh_tw': '啟用後會取代上方所有 DSP 變聲效果，請先載入模型',
-        'en':    'When enabled, this replaces all DSP voice effects above, so load a model first',
-        'ja':    '有効にすると上部の DSP ボイス効果をすべて置き換えるため、先にモデルを読み込んでください',
-        'ko':    '활성화하면 위의 DSP 보이스 효과를 모두 대체하므로 먼저 모델을 불러오세요',
-    },
-    'nvc_info_mode_a': {
-        'zh_tw': '模式 A — 選擇 .wav 參考音檔 → FreeVC 轉換（不需要 RVC 模型）',
-        'en':    'Mode A — choose a .wav reference voice → FreeVC conversion (no RVC model needed)',
-        'ja':    'モードA — .wav 参照音声を選択 → FreeVC 変換（RVCモデル不要）',
-        'ko':    '모드 A — .wav 참고 음성을 선택 → FreeVC 변환 (RVC 모델 불필요)',
-    },
-    'nvc_info_mode_b': {
-        'zh_tw': '模式 B — 選擇 .pth RVC 模型 → RVC 高品質轉換',
-        'en':    'Mode B — choose a .pth RVC model → higher-quality RVC conversion',
-        'ja':    'モードB — .pth RVC モデルを選択 → 高品質な RVC 変換',
-        'ko':    '모드 B — .pth RVC 모델 선택 → 고품질 RVC 변환',
-    },
-    'nvc_info_wav_link': {
-        'zh_tw': '📦 .wav 參考音檔：可到 freesound.org 下載乾淨人聲',
-        'en':    '📦 .wav reference voice: download a clean vocal sample from freesound.org',
-        'ja':    '📦 .wav 参照音声: freesound.org からクリーンな声素材を取得',
-        'ko':    '📦 .wav 참고 음성: freesound.org에서 깨끗한 음성 샘플 다운로드',
-    },
-    'nvc_model_ref_label': {
-        'zh_tw': '模型 / 參考音檔:', 'en': 'Model / Ref:', 'ja': 'モデル / 参照音声:', 'ko': '모델 / 참고 음성:',
-    },
-    'nvc_browse': {
-        'zh_tw': '瀏覽', 'en': 'Browse', 'ja': '参照', 'ko': '찾아보기',
-    },
-    'nvc_index_label': {
-        'zh_tw': '索引 (.index):', 'en': 'Index (.index):', 'ja': 'インデックス (.index):', 'ko': '인덱스 (.index):',
-    },
-    'nvc_optional': {
-        'zh_tw': ' 選填', 'en': ' optional', 'ja': ' 任意', 'ko': ' 선택 사항',
-    },
-    'nvc_method_label': {
-        'zh_tw': '  Method:', 'en': '  Method:', 'ja': '  Method:', 'ko': '  Method:',
-    },
-    'nvc_index_rate_hint': {
-        'zh_tw': '  建議 0.6–0.8；越高越像目標聲音',
-        'en':    '  Recommended 0.6–0.8; higher sounds more like the target voice',
-        'ja':    '  推奨 0.6–0.8。高いほど目標音声に近づく',
-        'ko':    '  권장 0.6–0.8; 높을수록 목표 음성에 가까움',
-    },
-    'nvc_gate_hint': {
-        'zh_tw': '  -60 = 關閉  •  建議 -40 ~ -30（說話時自動開啟）',
-        'en':    '  -60 = off  •  Recommended -40 to -30 (opens automatically while speaking)',
-        'ja':    '  -60 = オフ  •  推奨 -40 〜 -30（話すと自動で開く）',
-        'ko':    '  -60 = 끄기  •  권장 -40 ~ -30 (말할 때 자동으로 열림)',
-    },
-    'nvc_load_model': {
-        'zh_tw': '載入模型', 'en': 'Load Model', 'ja': 'モデル読込', 'ko': '모델 불러오기',
-    },
-    'nvc_enable': {
-        'zh_tw': '● 啟用 RVC', 'en': '● Enable RVC', 'ja': '● RVC 有効化', 'ko': '● RVC 활성화',
-    },
-    'nvc_on': {
-        'zh_tw': '● RVC 已啟用', 'en': '● RVC On', 'ja': '● RVC オン', 'ko': '● RVC 켜짐',
-    },
-    'nvc_not_loaded': {
-        'zh_tw': '尚未載入', 'en': 'Not loaded', 'ja': '未読込', 'ko': '불러오지 않음',
-    },
-    'nvc_status_loading': {
-        'zh_tw': '載入中…', 'en': 'Loading…', 'ja': '読込中…', 'ko': '불러오는 중…',
-    },
-    'nvc_status_ready': {
-        'zh_tw': '就緒', 'en': 'Ready', 'ja': '準備完了', 'ko': '준비됨',
-    },
-    'nvc_status_error': {
-        'zh_tw': '錯誤', 'en': 'Error', 'ja': 'エラー', 'ko': '오류',
-    },
-    'nvc_select_model_title': {
-        'zh_tw': '選擇 RVC 模型 (.pth) 或參考音檔 (.wav)',
-        'en':    'Select RVC model (.pth) or reference voice (.wav)',
-        'ja':    'RVC モデル (.pth) または参照音声 (.wav) を選択',
-        'ko':    'RVC 모델 (.pth) 또는 참고 음성 (.wav) 선택',
-    },
-    'nvc_select_index_title': {
-        'zh_tw': '選擇 RVC 索引（選填）',
-        'en':    'Select RVC index (optional)',
-        'ja':    'RVC インデックスを選択（任意）',
-        'ko':    'RVC 인덱스 선택 (선택 사항)',
-    },
-    'nvc_warn_title': {
-        'zh_tw': 'RVC', 'en': 'RVC', 'ja': 'RVC', 'ko': 'RVC',
-    },
-    'nvc_warn_model_missing': {
-        'zh_tw': '請先選擇模型（.pth）或參考音檔（.wav）。',
-        'en':    'Please select a model (.pth) or reference voice (.wav) first.',
-        'ja':    '先にモデル (.pth) または参照音声 (.wav) を選択してください。',
-        'ko':    '먼저 모델(.pth) 또는 참고 음성(.wav)을 선택하세요.',
-    },
     'status_saved': {
         'zh_tw': '設定已儲存。', 'en': 'Settings saved.', 'ja': '設定を保存しました。', 'ko': '설정을 저장했습니다.',
     },
@@ -861,259 +761,6 @@ class DeEsser:
             y[i] = np.float32(float(low[i]) + float(sib[i]) * gain)
         self._env = env
         return y
-
-
-class NeuralVoiceChanger:
-    """Real-time RVC (Retrieval-based Voice Conversion) wrapper.
-
-    Architecture
-    ------------
-    Audio callback  →  input queue  →  GPU worker thread (RVC inference)
-                    ←  output queue ←
-
-    The worker processes overlapping 400 ms chunks with cross-fade at
-    boundaries, giving smooth output with ~400–500 ms latency total.
-    With RTX 4080, GPU inference per chunk ≈ 15–25 ms, so the pipeline
-    never starves.
-
-    Requires
-    --------
-        pip install rvc-python
-        pip install torch torchvision torchaudio --index-url \
-            https://download.pytorch.org/whl/cu121
-
-    Models (.pth)
-    -------------
-    Download pretrained RVC models from Hugging Face:
-        https://huggingface.co/models?search=rvc
-    Search "rvc female voice" or "rvc male voice" for generic voices.
-    """
-
-    _CHUNK_MS   = 400   # chunk duration fed to RVC (ms) — quality vs latency
-    _OVERLAP_MS = 60    # cross-fade overlap at chunk boundaries (ms)
-
-    def __init__(self):
-        self.enabled    = False
-        self.model_path = ""
-        self.index_path = ""
-        self.f0_key     = 0         # semitones to transpose after conversion
-        self.f0_method  = "rmvpe"   # rmvpe | crepe | pm
-        self.index_rate = 0.75      # how much of index retrieval to blend (0–1)
-        self.status     = "Not loaded"
-        self._rvc       = None
-        self._ready     = False
-
-        chunk_n         = int(SR * self._CHUNK_MS   / 1000)
-        overlap_n       = int(SR * self._OVERLAP_MS / 1000)
-        hop_n           = chunk_n - 2 * overlap_n
-        self._chunk_n   = chunk_n
-        self._overlap_n = overlap_n
-        self._hop_n     = hop_n
-        self._fade_in   = np.linspace(0.0, 1.0, overlap_n, dtype=np.float32)
-        self._fade_out  = np.linspace(1.0, 0.0, overlap_n, dtype=np.float32)
-
-        self._in_buf    = np.zeros(0, np.float32)
-        self._out_buf   = np.zeros(0, np.float32)
-        self._in_lock   = threading.Lock()
-        self._out_lock  = threading.Lock()
-        self._worker    = None
-        self._stop_evt  = threading.Event()
-        self._trigger   = threading.Event()
-
-        # ── Noise gate (prevents wind/breath being converted) ─────────────────
-        # gate_db: open threshold in dBFS.  -60 = disabled (always open).
-        # 250 ms hold keeps voice from cutting mid-word.
-        self.gate_db      = -36.0
-        self._gate_hold_n = int(SR * 0.25)   # 250 ms hold in samples
-        self._gate_remain = 0                # countdown: samples left in hold
-
-    # ── Model loading (background thread) ────────────────────────────────────
-
-    def load_async(self, model_path: str, index_path: str = "",
-                   on_status=None):
-        """Start model load in a daemon thread; calls on_status(msg) on updates."""
-        self._ready     = False
-        self.status     = "Loading…"
-        self.model_path = model_path
-        self.index_path = index_path
-        if on_status:
-            on_status("Loading…")
-
-        def _run():
-            try:
-                import torch
-                device = "cuda:0" if torch.cuda.is_available() else "cpu"
-                rvc = None
-
-                if model_path.lower().endswith('.wav'):
-                    # ── FreeVC mode: model_path is a reference speaker .wav ──
-                    from TTS.api import TTS as CoquiTTS
-                    _tts = CoquiTTS(
-                        model_name="voice_conversion_models/multilingual/vctk/freevc24",
-                        progress_bar=False, gpu=(device == "cuda:0"))
-
-                    class _FreeVC:
-                        _backend = 'tts_freevc'
-                        def __init__(self, tts, ref):
-                            self.tts = tts; self.ref_wav = ref
-
-                    rvc = _FreeVC(_tts, model_path)
-
-                else:
-                    # ── RVC mode: model_path is a .pth model ────────────────
-                    try:
-                        from rvc_python.infer import RVCInference
-                        rvc = RVCInference(device=device)
-                        rvc.load_model(model_path, index_path if index_path else None)
-                    except ImportError:
-                        from infer_rvc_python import BaseLoader
-                        rvc = BaseLoader(only_cpu=(device == "cpu"))
-                        rvc.apply_conf(
-                            tag="mictool", file_model=model_path,
-                            pitch_algo="rmvpe", pitch_lvl=self.f0_key,
-                            file_index=index_path if index_path else "",
-                            index_influence=self.index_rate,
-                            respiration_median_filtering=3)
-                        rvc._backend = "infer_rvc"
-
-                self._rvc   = rvc
-                self._ready = True
-                self.status = f"Ready  [{device.upper()}]"
-            except Exception as exc:
-                self.status = f"Error: {exc}"
-            if on_status:
-                on_status(self.status)
-
-        threading.Thread(target=_run, daemon=True).start()
-
-    # ── Worker lifecycle ──────────────────────────────────────────────────────
-
-    def start_worker(self):
-        self._stop_evt.clear()
-        self._worker = threading.Thread(target=self._work_loop, daemon=True)
-        self._worker.start()
-
-    def stop_worker(self):
-        self._stop_evt.set()
-        self._trigger.set()   # wake blocked wait
-
-    # ── Background inference loop ─────────────────────────────────────────────
-
-    def _work_loop(self):
-        accum     = np.zeros(0, np.float32)
-        prev_tail = np.zeros(self._overlap_n, np.float32)
-
-        while not self._stop_evt.is_set():
-            self._trigger.wait(timeout=0.02)
-            self._trigger.clear()
-
-            with self._in_lock:
-                if len(self._in_buf):
-                    accum = np.concatenate([accum, self._in_buf])
-                    self._in_buf = np.zeros(0, np.float32)
-
-            while (len(accum) >= self._chunk_n
-                   and self._ready
-                   and not self._stop_evt.is_set()):
-
-                chunk  = accum[:self._chunk_n].copy()
-                accum  = accum[self._hop_n:]    # advance by hop (keeps overlap)
-
-                try:
-                    out = self._infer(chunk)        # GPU call
-                except Exception:
-                    out = chunk                     # fallback: pass-through
-
-                # Cross-fade leading overlap with tail of previous chunk
-                o   = self._overlap_n
-                h   = self._hop_n
-                fade_zone = (prev_tail           * self._fade_out
-                             + out[:o]           * self._fade_in)
-                prev_tail = out[o + h : o + h + o].copy()
-                result    = np.concatenate([fade_zone, out[o : o + h]])
-
-                with self._out_lock:
-                    self._out_buf = np.concatenate([self._out_buf, result])
-
-    def _infer(self, chunk: np.ndarray) -> np.ndarray:
-        """Run voice conversion on one chunk (blocking GPU call in worker thread)."""
-        import tempfile, os
-        import soundfile as sf
-
-        backend = getattr(self._rvc, '_backend', 'rvc_python')
-
-        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
-            tmp_in = f.name
-        tmp_out = tmp_in.replace('.wav', '_out.wav')
-        sf.write(tmp_in, chunk, SR)
-
-        try:
-            if backend == 'tts_freevc':
-                self._rvc.tts.voice_conversion_to_file(
-                    source_wav=tmp_in,
-                    target_wav=self._rvc.ref_wav,
-                    file_path=tmp_out)
-            elif backend == 'infer_rvc':
-                self._rvc(audio_path=tmp_in, save_path=tmp_out)
-            else:
-                # rvc-python: numpy API
-                out = self._rvc.infer_audio(
-                    chunk, sr=SR,
-                    f0_up_key=self.f0_key,
-                    f0_method=self.f0_method,
-                    index_rate=self.index_rate)
-                out = np.asarray(out, dtype=np.float32)
-                if out.ndim > 1: out = out[:, 0]
-                if len(out) != self._chunk_n:
-                    out = sci_signal.resample(out, self._chunk_n).astype(np.float32)
-                return out
-
-            out, _ = sf.read(tmp_out, dtype='float32')
-        finally:
-            for p in (tmp_in, tmp_out):
-                try: os.unlink(p)
-                except OSError: pass
-
-        out = np.asarray(out, dtype=np.float32)
-        if out.ndim > 1: out = out[:, 0]
-        if len(out) != self._chunk_n:
-            out = sci_signal.resample(out, self._chunk_n).astype(np.float32)
-        return out
-
-    # ── Audio-callback-facing method (non-blocking) ───────────────────────────
-
-    def process(self, x: np.ndarray) -> np.ndarray:
-        if not self.enabled or not self._ready:
-            return x
-
-        # ── Noise gate ────────────────────────────────────────────────────────
-        # Only feed true voice to the neural model; wind/breath gets silence.
-        if self.gate_db > -60.0:
-            rms_db = 20.0 * np.log10(np.sqrt(np.mean(x ** 2)) + 1e-10)
-            if rms_db >= self.gate_db:
-                self._gate_remain = self._gate_hold_n   # voice → reset hold
-            elif self._gate_remain > 0:
-                self._gate_remain -= len(x)             # hold counting down
-            else:
-                # Gate closed: skip neural processing, drain buffered output
-                with self._out_lock:
-                    if len(self._out_buf) >= len(x):
-                        out = self._out_buf[:len(x)].copy()
-                        self._out_buf = self._out_buf[len(x):]
-                        return out
-                return np.zeros(len(x), np.float32)
-
-        n = len(x)
-        with self._in_lock:
-            self._in_buf = np.concatenate([self._in_buf, x])
-        self._trigger.set()
-        with self._out_lock:
-            if len(self._out_buf) >= n:
-                out = self._out_buf[:n].copy()
-                self._out_buf = self._out_buf[n:]
-                return out
-        # Startup silence (buffer filling) — transparent to listener
-        return np.zeros(n, np.float32)
 
 
 class FormantShifter:
@@ -1943,7 +1590,6 @@ class AudioEngine:
         self.speak = SpeakingChain()
         self.sing  = SingingChain()
         self.pitch  = PitchShifter()
-        self.neural = NeuralVoiceChanger()
         self.loopback = LoopbackCapture()
         self.stream     = None
         self.mon_stream = None
@@ -1956,11 +1602,7 @@ class AudioEngine:
         # ── DSP chain (mic only) ──────────────────────────────────────────────
         if   self.mode == self.SPEAK: x = self.speak.process(x)
         elif self.mode == self.SING:  x = self.sing.process(x)
-        # Neural RVC (if loaded+enabled) replaces DSP pitch shifter
-        if self.neural.enabled and self.neural._ready:
-            x = self.neural.process(x)
-        else:
-            x = self.pitch.process(x)
+        x = self.pitch.process(x)
         x = np.clip(x, -1.0, 1.0)
         # ── Mix loopback AFTER DSP so app audio is never pitch-shifted/EQ'd ──
         if self.loopback.enabled:
@@ -1997,7 +1639,6 @@ class AudioEngine:
             callback=self._cb,
         )
         self.stream.start()
-        self.neural.start_worker()
         if mon_dev is not None:
             mon_info = sd.query_devices(mon_dev)
             n_mon = min(2, mon_info['max_output_channels'])
@@ -2010,7 +1651,6 @@ class AudioEngine:
             self.mon_stream.start()
 
     def stop(self):
-        self.neural.stop_worker()
         self.loopback.stop()
         if self.mon_stream:
             try:
@@ -2139,7 +1779,6 @@ class MicToolApp(tk.Tk):
         self._i18n_textboxes: list = [] # list[tuple[tk.Text, str]]
         self._nb_tab_info:  list = []   # list[tuple[tk.Frame, str, str]]
         self._nb: ttk.Notebook | None = None
-        self._nvc_status_raw = "Not loaded"
         self._apply_styles()
         self._build_ui()
         self._auto_load()     # restore last session
@@ -2205,10 +1844,6 @@ class MicToolApp(tk.Tk):
                     pass
         if hasattr(self, '_voice_btns'):
             self._refresh_voice_btns()
-        if hasattr(self, '_nvc_enable_btn'):
-            self._sync_nvc_enable_button()
-        if hasattr(self, '_nvc_status_lbl'):
-            self._nvc_status_lbl.config(text=self._localize_nvc_status(self._nvc_status_raw))
 
     # ── Styles ────────────────────────────────────────────────────────────────
 
@@ -2984,102 +2619,6 @@ class MicToolApp(tk.Tk):
         tk.Label(s4, textvariable=_mkvar('vc_formant_hint'),
                  font=("Segoe UI", 8), bg=BG2, fg=MUTE).pack(anchor='w', padx=4, pady=(0, 4))
 
-        # ── Neural Voice Conversion (RVC) ─────────────────────────────────────
-        s5 = self._section(p, 'sec_neural_vc'); s5.pack(fill='x', pady=3)
-
-        info_f = tk.Frame(s5, bg=BG2); info_f.pack(fill='x', padx=2, pady=(2, 6))
-        tk.Label(info_f, textvariable=_mkvar('nvc_info_gpu'),
-                 font=("Segoe UI", 8), bg=BG2, fg=GRN).pack(anchor='w')
-        tk.Label(info_f, textvariable=_mkvar('nvc_info_replace'),
-                 font=("Segoe UI", 8), bg=BG2, fg=SUB).pack(anchor='w')
-        tk.Label(info_f, textvariable=_mkvar('nvc_info_mode_a'),
-                 font=("Segoe UI", 8), bg=BG2, fg=YEL).pack(anchor='w')
-        tk.Label(info_f, textvariable=_mkvar('nvc_info_mode_b'),
-                 font=("Segoe UI", 8), bg=BG2, fg=YEL).pack(anchor='w')
-        lnk = tk.Label(info_f,
-                       textvariable=_mkvar('nvc_info_wav_link'),
-                       font=("Segoe UI", 8, "underline"), bg=BG2, fg=BLUE, cursor="hand2")
-        lnk.pack(anchor='w')
-        lnk.bind("<Button-1>", lambda e: __import__('webbrowser').open(
-            "https://freesound.org/search/?q=voice+dry"))
-
-        # Model path
-        row_m = tk.Frame(s5, bg=BG2); row_m.pack(fill='x', pady=2)
-        tk.Label(row_m, textvariable=_mkvar('nvc_model_ref_label'), font=("Segoe UI", 9),
-                 bg=BG2, fg=SUB, width=13, anchor='w').pack(side='left')
-        self._nvc_model_var = tk.StringVar()
-        tk.Entry(row_m, textvariable=self._nvc_model_var,
-                 bg=BG3, fg=FG, insertbackground=FG,
-                 font=("Consolas", 8), relief='flat', width=30).pack(side='left', padx=(0, 4))
-        btn_model = tk.Button(row_m, text=t('nvc_browse'), font=("Segoe UI", 8),
-                              bg=BG3, fg=BLUE, bd=0, padx=6,
-                              command=self._nvc_browse_model)
-        btn_model.pack(side='left')
-        self._i18n_buttons.append((btn_model, 'nvc_browse'))
-
-        # Index path (optional)
-        row_i = tk.Frame(s5, bg=BG2); row_i.pack(fill='x', pady=2)
-        tk.Label(row_i, textvariable=_mkvar('nvc_index_label'), font=("Segoe UI", 9),
-                 bg=BG2, fg=SUB, width=13, anchor='w').pack(side='left')
-        self._nvc_index_var = tk.StringVar()
-        tk.Entry(row_i, textvariable=self._nvc_index_var,
-                 bg=BG3, fg=FG, insertbackground=FG,
-                 font=("Consolas", 8), relief='flat', width=30).pack(side='left', padx=(0, 4))
-        btn_index = tk.Button(row_i, text=t('nvc_browse'), font=("Segoe UI", 8),
-                              bg=BG3, fg=BLUE, bd=0, padx=6,
-                              command=self._nvc_browse_index)
-        btn_index.pack(side='left')
-        self._i18n_buttons.append((btn_index, 'nvc_browse'))
-        tk.Label(row_i, textvariable=_mkvar('nvc_optional'), font=("Segoe UI", 8),
-                 bg=BG2, fg=MUTE).pack(side='left')
-
-        # F0 key + method
-        row_f = tk.Frame(s5, bg=BG2); row_f.pack(fill='x', pady=(4, 0))
-        self._nvc_f0key = LabeledSlider(row_f, "F0 Key", -12, 12, 0,
-                                        "{:+.0f}", " st", self._nvc_param_chg, length=150)
-        self._nvc_f0key.pack(side='left')
-        tk.Label(row_f, textvariable=_mkvar('nvc_method_label'), font=("Segoe UI", 9),
-                 bg=BG2, fg=SUB).pack(side='left', padx=(8, 2))
-        self._nvc_method_var = tk.StringVar(value="rmvpe")
-        ttk.Combobox(row_f, textvariable=self._nvc_method_var,
-                     values=["rmvpe", "crepe", "pm"],
-                     state='readonly', width=7).pack(side='left')
-        self._nvc_method_var.trace_add('write', lambda *_: self._nvc_param_chg())
-
-        # Index rate
-        row_ir = tk.Frame(s5, bg=BG2); row_ir.pack(fill='x', pady=(0, 4))
-        self._nvc_idx_rate = LabeledSlider(row_ir, "Index Rate", 0.0, 1.0, 0.75,
-                                           "{:.2f}", "", self._nvc_param_chg, length=150)
-        self._nvc_idx_rate.pack(side='left')
-        tk.Label(row_ir, textvariable=_mkvar('nvc_index_rate_hint'),
-                 font=("Segoe UI", 8), bg=BG2, fg=MUTE).pack(side='left', padx=4)
-
-        # Noise Gate (prevents wind/breath noise from being converted)
-        row_g = tk.Frame(s5, bg=BG2); row_g.pack(fill='x', pady=(0, 2))
-        self._nvc_gate = LabeledSlider(row_g, "Noise Gate", -60, 0, -36,
-                                       "{:.0f}", " dB", self._nvc_gate_chg, length=150)
-        self._nvc_gate.pack(side='left')
-        tk.Label(row_g, textvariable=_mkvar('nvc_gate_hint'),
-                 font=("Segoe UI", 8), bg=BG2, fg=MUTE).pack(side='left', padx=4)
-
-        # Buttons + status
-        row_b = tk.Frame(s5, bg=BG2); row_b.pack(fill='x', pady=(4, 6))
-        self._nvc_load_btn = tk.Button(row_b, text=t('nvc_load_model'),
-                                       font=("Segoe UI", 9, "bold"),
-                                       bg=BLUE, fg=BG, bd=0, padx=10, pady=4,
-                                       command=self._nvc_load)
-        self._nvc_load_btn.pack(side='left', padx=(0, 6))
-        self._i18n_buttons.append((self._nvc_load_btn, 'nvc_load_model'))
-        self._nvc_enable_btn = tk.Button(row_b, text=t('nvc_enable'),
-                                         font=("Segoe UI", 9, "bold"),
-                                         bg=BG3, fg=MUTE, bd=0, padx=10, pady=4,
-                                         state='disabled',
-                                         command=self._nvc_toggle)
-        self._nvc_enable_btn.pack(side='left', padx=(0, 10))
-        self._nvc_status_lbl = tk.Label(row_b, text=t('nvc_not_loaded'),
-                                        font=("Segoe UI", 8), bg=BG2, fg=SUB)
-        self._nvc_status_lbl.pack(side='left')
-
         self._refresh_voice_btns()
 
     def _set_voice_mode(self, mode: int):
@@ -3135,82 +2674,6 @@ class MicToolApp(tk.Tk):
         fs = self.engine.pitch._fs
         fs.formant  = self._vc_formant.get()
         fs.pitch_st = self._vc_gender_pitch.get()
-
-    # ── Neural VC callbacks ───────────────────────────────────────────────────
-
-    def _nvc_browse_model(self):
-        p = filedialog.askopenfilename(
-            title=t('nvc_select_model_title'),
-            filetypes=[("Model or voice", "*.pth *.wav"),
-                       ("RVC model", "*.pth"),
-                       ("Reference voice", "*.wav"),
-                       ("All files", "*.*")])
-        if p:
-            self._nvc_model_var.set(p)
-
-    def _nvc_browse_index(self):
-        p = filedialog.askopenfilename(
-            title=t('nvc_select_index_title'),
-            filetypes=[("FAISS index", "*.index"), ("All files", "*.*")])
-        if p:
-            self._nvc_index_var.set(p)
-
-    def _nvc_load(self):
-        model = self._nvc_model_var.get().strip()
-        if not model:
-            messagebox.showwarning(t('nvc_warn_title'), t('nvc_warn_model_missing'))
-            return
-        index = self._nvc_index_var.get().strip()
-        self._nvc_load_btn.config(state='disabled')
-
-        def _on_status(msg):
-            # Called from background thread — schedule UI update on main thread
-            self.after(0, self._nvc_update_status, msg)
-
-        self.engine.neural.load_async(model, index, on_status=_on_status)
-
-    def _nvc_update_status(self, msg: str):
-        self._nvc_status_raw = msg
-        self._nvc_status_lbl.config(text=self._localize_nvc_status(msg))
-        ready = self.engine.neural._ready
-        if ready:
-            self._nvc_status_lbl.config(fg=GRN)
-            self._nvc_enable_btn.config(state='normal', fg=SUB)
-        else:
-            self._nvc_status_lbl.config(fg=RED if "Error" in msg else YEL)
-        self._nvc_load_btn.config(state='normal')
-
-    def _localize_nvc_status(self, msg: str) -> str:
-        if msg == "Loading…":
-            return t('nvc_status_loading')
-        if msg.startswith("Ready"):
-            suffix = msg[len("Ready"):].strip()
-            return f"{t('nvc_status_ready')} {suffix}".rstrip()
-        if msg.startswith("Error:"):
-            return f"{t('nvc_status_error')}: {msg[len('Error:'):].strip()}"
-        if msg == "Not loaded":
-            return t('nvc_not_loaded')
-        return msg
-
-    def _sync_nvc_enable_button(self):
-        if self.engine.neural.enabled:
-            self._nvc_enable_btn.config(bg=GRN, fg=BG, text=t('nvc_on'))
-        else:
-            self._nvc_enable_btn.config(bg=BG3, fg=SUB, text=t('nvc_enable'))
-
-    def _nvc_toggle(self):
-        nvc = self.engine.neural
-        nvc.enabled = not nvc.enabled
-        self._sync_nvc_enable_button()
-
-    def _nvc_param_chg(self, v=None):
-        nvc = self.engine.neural
-        nvc.f0_key     = int(self._nvc_f0key.get())
-        nvc.f0_method  = self._nvc_method_var.get()
-        nvc.index_rate = self._nvc_idx_rate.get()
-
-    def _nvc_gate_chg(self, v=None):
-        self.engine.neural.gate_db = self._nvc_gate.get()
 
     # ── Parameter callbacks — Speaking ────────────────────────────────────────
 
@@ -3435,10 +2898,6 @@ class MicToolApp(tk.Tk):
             "mon_vol":     self._mon_vol_var.get(),
             "mode":        self.engine.mode,
             "voice_mode":  self.engine.pitch.mode,
-            "nvc_model":   self.engine.neural.model_path,
-            "nvc_index":   self.engine.neural.index_path,
-            "nvc_enabled": self.engine.neural.enabled,
-            "nvc_method":  self.engine.neural.f0_method,
             "sliders":     self._collect_slider_values(),
         }
         try:
@@ -3484,22 +2943,6 @@ class MicToolApp(tk.Tk):
             self._set_mode(int(data["mode"]))
         if "voice_mode" in data:
             self._set_voice_mode(int(data["voice_mode"]))
-        # Neural VC — restore paths and re-trigger load if model was active
-        if data.get("nvc_model") and hasattr(self, '_nvc_model_var'):
-            self._nvc_model_var.set(data["nvc_model"])
-            self._nvc_index_var.set(data.get("nvc_index", ""))
-            if data.get("nvc_method"):
-                self._nvc_method_var.set(data["nvc_method"])
-            if data.get("nvc_enabled") or data.get("nvc_model"):
-                # Silently reload model in background on startup
-                def _on_status(msg):
-                        self.after(0, self._nvc_update_status, msg)
-                        if self.engine.neural._ready and data.get("nvc_enabled"):
-                            self.after(0, lambda: setattr(self.engine.neural, 'enabled', True))
-                            self.after(0, self._sync_nvc_enable_button)
-                self.engine.neural.load_async(
-                    data["nvc_model"], data.get("nvc_index", ""),
-                    on_status=_on_status)
         # Sliders — setting each var fires the trace → updates the engine
         for name, val in data.get("sliders", {}).items():
             obj = getattr(self, name, None)
