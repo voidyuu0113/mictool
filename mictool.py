@@ -2142,6 +2142,8 @@ class AudioEngine:
             callback=self._cb,
         )
         self.stream.start()
+        if mon_dev == out_dev:
+            mon_dev = None
         if mon_dev is not None:
             mon_info = sd.query_devices(mon_dev)
             n_mon = min(2, mon_info['max_output_channels'])
@@ -2299,6 +2301,12 @@ class MicToolApp(tk.Tk):
         self._tray_supported: bool | None = None
         self._tray_failure_logged = False
         self._hotkeys_bindings_frame: tk.Frame | None = None
+        self._device_change_suspended = False
+        self._device_restart_job = None
+        self._active_device_selection: dict[str, str] | None = None
+        self._in_cb: ttk.Combobox | None = None
+        self._out_cb: ttk.Combobox | None = None
+        self._mon_cb: ttk.Combobox | None = None
         self._is_quitting = False
         self._hotkeys.start()
         self._apply_styles()
@@ -2528,50 +2536,105 @@ class MicToolApp(tk.Tk):
                   bg=BG3, fg=FG, activebackground=BG3,
                   bd=0, padx=12, pady=5, command=dlg.destroy).pack(side='left', padx=6)
 
+    def _enumerate_device_names(self):
+        devs = sd.query_devices()
+        in_names = [f"{i}: {d['name']}" for i, d in enumerate(devs)
+                    if d['max_input_channels'] > 0]
+        out_names = [f"{i}: {d['name']}" for i, d in enumerate(devs)
+                     if d['max_output_channels'] > 0]
+        return in_names, out_names
+
+    def _default_device_str(self, names, is_input: bool):
+        if not is_input:
+            for n in names:
+                nl = n.lower()
+                if 'cable input' in nl or 'vb-audio' in nl:
+                    return n
+        try:
+            idx = sd.default.device[0 if is_input else 1]
+            pfx = f"{idx}:"
+            for n in names:
+                if n.startswith(pfx):
+                    return n
+        except Exception:
+            pass
+        return names[0] if names else ""
+
+    @staticmethod
+    def _match_device_choice(current: str, names: list[str], fallback: str) -> str:
+        if current in names:
+            return current
+        if current:
+            prefix = current.split(':', 1)[0] + ':'
+            for name in names:
+                if name.startswith(prefix):
+                    return name
+            current_name = current.split(':', 1)[1].strip().lower() if ':' in current else current.strip().lower()
+            for name in names:
+                if ':' in name and name.split(':', 1)[1].strip().lower() == current_name:
+                    return name
+        return fallback
+
+    def _set_device_vars(self, *, in_dev: str | None = None, out_dev: str | None = None, mon_dev: str | None = None):
+        self._device_change_suspended = True
+        try:
+            if in_dev is not None and self.in_var.get() != in_dev:
+                self.in_var.set(in_dev)
+            if out_dev is not None and self.out_var.get() != out_dev:
+                self.out_var.set(out_dev)
+            if mon_dev is not None and self.mon_var.get() != mon_dev:
+                self.mon_var.set(mon_dev)
+        finally:
+            self._device_change_suspended = False
+
+    def _refresh_device_lists(self, preserve: bool = True):
+        in_names, out_names = self._enumerate_device_names()
+        self._in_names = in_names
+        self._out_names = out_names
+        mon_names = ["Off"] + out_names
+        if self._in_cb is not None:
+            self._in_cb.config(values=in_names)
+        if self._out_cb is not None:
+            self._out_cb.config(values=out_names)
+        if self._mon_cb is not None:
+            self._mon_cb.config(values=mon_names)
+
+        if hasattr(self, 'in_var') and hasattr(self, 'out_var') and hasattr(self, 'mon_var'):
+            cur_in = self.in_var.get() if preserve else ""
+            cur_out = self.out_var.get() if preserve else ""
+            cur_mon = self.mon_var.get() if preserve else "Off"
+            new_in = self._match_device_choice(cur_in, in_names, self._default_device_str(in_names, True))
+            new_out = self._match_device_choice(cur_out, out_names, self._default_device_str(out_names, False))
+            if cur_mon == "Off":
+                new_mon = "Off"
+            else:
+                new_mon = self._match_device_choice(cur_mon, out_names, "Off")
+            self._set_device_vars(in_dev=new_in, out_dev=new_out, mon_dev=new_mon)
+
     def _build_transport(self):
         f = tk.Frame(self, bg=BG)
         f.pack(fill='x', padx=14, pady=4)
 
-        devs      = sd.query_devices()
-        in_names  = [f"{i}: {d['name']}" for i, d in enumerate(devs)
-                     if d['max_input_channels'] > 0]
-        out_names = [f"{i}: {d['name']}" for i, d in enumerate(devs)
-                     if d['max_output_channels'] > 0]
+        in_names, out_names = self._enumerate_device_names()
         self._in_names  = in_names
         self._out_names = out_names
-
-        def default_str(names, is_input):
-            # Prefer VB-Audio Virtual Cable for output when available
-            if not is_input:
-                for n in names:
-                    nl = n.lower()
-                    if 'cable input' in nl or 'vb-audio' in nl:
-                        return n
-            try:
-                idx = sd.default.device[0 if is_input else 1]
-                pfx = f"{idx}:"
-                for n in names:
-                    if n.startswith(pfx):
-                        return n
-            except Exception:
-                pass
-            return names[0] if names else ""
 
         row1 = tk.Frame(f, bg=BG); row1.pack(fill='x', pady=2)
         tk.Label(row1, textvariable=_mkvar('lbl_input'), font=("Segoe UI", 9),
                  bg=BG, fg=SUB, width=7, anchor='w').pack(side='left')
-        self.in_var = tk.StringVar(value=default_str(in_names, True))
-        ttk.Combobox(row1, textvariable=self.in_var, values=in_names,
-                     state='readonly', width=44).pack(side='left')
+        self.in_var = tk.StringVar(value=self._default_device_str(in_names, True))
+        self._in_cb = ttk.Combobox(row1, textvariable=self.in_var, values=in_names,
+                                   state='readonly', width=44)
+        self._in_cb.pack(side='left')
         self.in_var.trace_add('write', self._on_dev_change)
 
         row2 = tk.Frame(f, bg=BG); row2.pack(fill='x', pady=2)
         tk.Label(row2, textvariable=_mkvar('lbl_output'), font=("Segoe UI", 9),
                  bg=BG, fg=SUB, width=7, anchor='w').pack(side='left')
-        self.out_var = tk.StringVar(value=default_str(out_names, False))
-        out_cb = ttk.Combobox(row2, textvariable=self.out_var, values=out_names,
-                              state='readonly', width=44)
-        out_cb.pack(side='left')
+        self.out_var = tk.StringVar(value=self._default_device_str(out_names, False))
+        self._out_cb = ttk.Combobox(row2, textvariable=self.out_var, values=out_names,
+                                    state='readonly', width=44)
+        self._out_cb.pack(side='left')
         self.out_var.trace_add('write', self._on_dev_change)
 
         # Monitor row — independent listen-back output (does NOT affect OBS signal)
@@ -2579,9 +2642,10 @@ class MicToolApp(tk.Tk):
         row_mon = tk.Frame(f, bg=BG); row_mon.pack(fill='x', pady=2)
         tk.Label(row_mon, textvariable=_mkvar('lbl_monitor'), font=("Segoe UI", 9),
                  bg=BG, fg=SUB, width=7, anchor='w').pack(side='left')
-        self.mon_var = tk.StringVar(value=default_str(out_names, False))
-        ttk.Combobox(row_mon, textvariable=self.mon_var, values=mon_names,
-                     state='readonly', width=44).pack(side='left')
+        self.mon_var = tk.StringVar(value="Off")
+        self._mon_cb = ttk.Combobox(row_mon, textvariable=self.mon_var, values=mon_names,
+                                    state='readonly', width=44)
+        self._mon_cb.pack(side='left')
         self.mon_var.trace_add('write', self._on_dev_change)
 
         row_mvol = tk.Frame(f, bg=BG); row_mvol.pack(fill='x', pady=(0, 2))
@@ -3722,27 +3786,118 @@ class MicToolApp(tk.Tk):
         self._mon_vol_lbl.config(text=f"{v:.0f} %")
         self.engine.monitor_vol = v / 100.0
 
-    def _start(self):
+    def _current_device_selection(self) -> dict[str, str]:
+        return {
+            "in_dev": self.in_var.get(),
+            "out_dev": self.out_var.get(),
+            "mon_dev": self.mon_var.get(),
+        }
+
+    def _resolve_device_selection(self, selection: dict[str, str], preserve_ui: bool = True) -> dict[str, str]:
+        self._refresh_device_lists(preserve=preserve_ui)
+        in_choice = self._match_device_choice(
+            selection.get("in_dev", ""),
+            self._in_names,
+            self._default_device_str(self._in_names, True),
+        )
+        out_choice = self._match_device_choice(
+            selection.get("out_dev", ""),
+            self._out_names,
+            self._default_device_str(self._out_names, False),
+        )
+        mon_choice = selection.get("mon_dev", "Off")
+        if mon_choice != "Off":
+            mon_choice = self._match_device_choice(mon_choice, self._out_names, "Off")
+        return {
+            "in_dev": in_choice,
+            "out_dev": out_choice,
+            "mon_dev": mon_choice,
+        }
+
+    def _set_transport_button_states(self):
+        running = self.engine.running
+        self._btn_start.config(state='disabled' if running else 'normal')
+        self._btn_stop.config(state='normal' if running else 'disabled')
+
+    def _start_selection(self, selection: dict[str, str], *, show_errors: bool = True, sync_ui: bool = False) -> tuple[bool, dict[str, str], Exception | None]:
+        resolved = self._resolve_device_selection(selection)
+        exc: Exception | None = None
         try:
-            in_dev  = self._dev_idx(self.in_var.get())
-            out_dev = self._dev_idx(self.out_var.get())
-            mon_str = self.mon_var.get()
+            in_dev = self._dev_idx(resolved["in_dev"])
+            out_dev = self._dev_idx(resolved["out_dev"])
+            mon_str = resolved["mon_dev"]
             mon_dev = None if mon_str == "Off" else self._dev_idx(mon_str)
             self.engine.start(in_dev, out_dev, mon_dev)
-            self._btn_start.config(state='disabled')
-            self._btn_stop.config(state='normal')
-        except Exception as exc:
+            if getattr(self, "_lb_var", None) is not None and self._lb_var.get() != "Off":
+                self._on_lb_change()
+            self._active_device_selection = resolved.copy()
+            if sync_ui:
+                self._set_device_vars(**resolved)
+            self._set_transport_button_states()
+            return True, resolved, None
+        except Exception as err:
+            exc = err
+            self._set_transport_button_states()
+            if show_errors:
+                messagebox.showerror(t('err_start_title'), str(err))
+            return False, resolved, exc
+
+    def _run_pending_device_restart(self):
+        self._device_restart_job = None
+        if self._device_change_suspended or not self.engine.running:
+            return
+        previous = self._active_device_selection or self._current_device_selection()
+        target = self._current_device_selection()
+        if target == previous:
+            return
+
+        ok, _, exc = self._start_selection(target, show_errors=False, sync_ui=True)
+        if ok:
+            return
+
+        restored = False
+        if previous:
+            restored, previous, _ = self._start_selection(previous, show_errors=False, sync_ui=True)
+        if restored:
             messagebox.showerror(t('err_start_title'), str(exc))
+            return
+
+        self._active_device_selection = None
+        self._set_transport_button_states()
+        messagebox.showerror(t('err_start_title'), str(exc))
+
+    def _schedule_device_restart(self):
+        if self._device_change_suspended or not self.engine.running:
+            return
+        if self._device_restart_job is not None:
+            try:
+                self.after_cancel(self._device_restart_job)
+            except Exception:
+                pass
+        self._device_restart_job = self.after(150, self._run_pending_device_restart)
+
+    def _start(self):
+        if self._device_restart_job is not None:
+            try:
+                self.after_cancel(self._device_restart_job)
+            except Exception:
+                pass
+            self._device_restart_job = None
+        self._start_selection(self._current_device_selection(), sync_ui=True)
 
     def _stop(self):
+        if self._device_restart_job is not None:
+            try:
+                self.after_cancel(self._device_restart_job)
+            except Exception:
+                pass
+            self._device_restart_job = None
         self.engine.stop()
-        self._btn_start.config(state='normal')
-        self._btn_stop.config(state='disabled')
+        self._set_transport_button_states()
 
     def _on_dev_change(self, *_):
         """Auto-restart stream when device selection changes while running."""
-        if self.engine.stream is not None:
-            self.after(50, self._start)   # defer 50ms so StringVar finishes writing
+        self._schedule_device_restart()
 
     def _refresh_lb_sources(self):
         """Re-enumerate running apps and devices, update the combobox."""
@@ -3856,14 +4011,13 @@ class MicToolApp(tk.Tk):
             pass
 
     def _apply_settings(self, data: dict):
-        # Device dropdowns
-        if data.get("in_dev") in self._in_names:
-            self.in_var.set(data["in_dev"])
-        if data.get("out_dev") in self._out_names:
-            self.out_var.set(data["out_dev"])
-        mon_choices = ["Off"] + self._out_names
-        if data.get("mon_dev") in mon_choices:
-            self.mon_var.set(data["mon_dev"])
+        running_selection = self._active_device_selection.copy() if self._active_device_selection else None
+        device_selection = self._resolve_device_selection({
+            "in_dev": data.get("in_dev", self.in_var.get()),
+            "out_dev": data.get("out_dev", self.out_var.get()),
+            "mon_dev": data.get("mon_dev", self.mon_var.get()),
+        }, preserve_ui=False)
+        self._set_device_vars(**device_selection)
         if "mon_vol" in data:
             self._mon_vol_var.set(float(data["mon_vol"]))
         # Mode buttons
@@ -3894,6 +4048,8 @@ class MicToolApp(tk.Tk):
                     obj.set(float(val))
                 except Exception:
                     pass
+        if self.engine.running and running_selection != device_selection:
+            self._start_selection(device_selection, sync_ui=True)
 
     def _create_tray_image(self):
         if Image is None or ImageDraw is None:
