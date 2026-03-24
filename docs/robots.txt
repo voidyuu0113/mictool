@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://voidyuu0113.github.io/mictool/sitemap.xml
