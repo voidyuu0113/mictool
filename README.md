@@ -74,6 +74,15 @@ MicTool 是一款給 Windows 使用的即時麥克風音訊處理工具，適合
 - 音訊輸入與輸出裝置
 - 若要把處理後聲音送進 OBS，建議搭配 VB-CABLE 或其他虛擬音訊裝置
 
+### 直接下載
+
+如果你只是想直接使用，不需要先安裝 Python。建議先從 GitHub Release 下載已打包版本：
+
+1. 從 GitHub Release 下載 zip
+2. 解壓縮整個 `MicTool-NoAI` 資料夾
+3. 執行 `MicTool-NoAI.exe`
+4. 請保留整個資料夾內容，不要只單獨拿出 `.exe`
+
 ### 安裝方式
 
 安裝依賴：
@@ -141,13 +150,6 @@ dist/MicTool-NoAI/
 ```text
 dist/MicTool-NoAI/MicTool-NoAI.exe
 ```
-
-### Release 使用方式
-
-1. 從 GitHub Release 下載 zip
-2. 解壓縮整個 `MicTool-NoAI` 資料夾
-3. 執行 `MicTool-NoAI.exe`
-4. 請保留整個資料夾內容，不要只單獨拿出 `.exe`
 
 ### 注意事項
 
@@ -233,6 +235,15 @@ If this is your first time using a tool like this, think of MicTool as one deskt
 - Audio input and output devices
 - A virtual audio device such as VB-CABLE is recommended if you want to route the processed signal into OBS
 
+### Download Ready-to-Use Build
+
+If you just want to use MicTool right away, you do not need to install Python first. Start with the packaged release:
+
+1. Download the zip from GitHub Releases
+2. Extract the whole `MicTool-NoAI` folder
+3. Run `MicTool-NoAI.exe`
+4. Keep the full folder contents together instead of copying out only the `.exe`
+
 ### Installation
 
 Install dependencies:
@@ -300,13 +311,6 @@ Main executable:
 ```text
 dist/MicTool-NoAI/MicTool-NoAI.exe
 ```
-
-### Release Package
-
-1. Download the zip from GitHub Releases
-2. Extract the whole `MicTool-NoAI` folder
-3. Run `MicTool-NoAI.exe`
-4. Keep the full folder contents together instead of copying out only the `.exe`
 
 ### Notes
 
@@ -392,6 +396,15 @@ MicTool は、Windows 向けのリアルタイムマイク音声処理ツール�
 - 音声入力・出力デバイス
 - 処理後の音声を OBS に送る場合は、VB-CABLE などの仮想音声デバイスを推奨
 
+### すぐに使うには
+
+すぐに使いたい場合は、最初に Python を入れる必要はありません。まずは GitHub Release のパッケージ版を使うのがおすすめです。
+
+1. GitHub Releases から zip をダウンロード
+2. `MicTool-NoAI` フォルダ全体を展開
+3. `MicTool-NoAI.exe` を実行
+4. `.exe` だけを取り出さず、フォルダごと保持する
+
 ### インストール
 
 依存関係のインストール:
@@ -459,13 +472,6 @@ dist/MicTool-NoAI/
 ```text
 dist/MicTool-NoAI/MicTool-NoAI.exe
 ```
-
-### Release パッケージ
-
-1. GitHub Releases から zip をダウンロード
-2. `MicTool-NoAI` フォルダ全体を展開
-3. `MicTool-NoAI.exe` を実行
-4. `.exe` だけを取り出さず、フォルダごと保持する
 
 ### 注意
 
