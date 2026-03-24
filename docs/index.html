@@ -1,60 +1,64 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MicTool | Windows 麥克風處理、App Loopback、OBS 路由</title>
-  <meta name="description" content="MicTool 是一款給 Windows 使用的即時聲音工具，支援 Talk / Sing、變聲、Soundboard、全域快捷鍵、App Loopback 與 OBS 路由。">
-  <meta name="keywords" content="MicTool, Windows 麥克風處理, App Loopback, Windows loopback, OBS 路由, 即時變聲, 音效板, global hotkeys">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MicTool | Windows 即時聲音控制台</title>
+  <meta name="description" content="MicTool 是為 Windows 設計的即時聲音控制台，整合 Talk、Sing、Voice、Soundboard、Hotkeys 與 App Loopback，快速接進 OBS 與直播流程。">
+  <meta name="keywords" content="MicTool, Windows 麥克風工具, OBS 聲音路由, 即時變聲, Soundboard, Hotkeys, App Loopback">
   <meta name="robots" content="index,follow">
-  <meta name="theme-color" content="#132844">
+  <meta name="theme-color" content="#10141f">
+  <link rel="canonical" href="https://voidyuu0113.github.io/mictool/">
+  <link rel="icon" href="./favicon.ico" sizes="any">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="MicTool | Windows 麥克風處理、App Loopback、OBS 路由">
-  <meta property="og:description" content="把麥克風、指定程式聲音與 OBS 路由整合在一起的 Windows 即時聲音工具。">
+  <meta property="og:title" content="MicTool | Windows 即時聲音控制台">
+  <meta property="og:description" content="把麥克風處理、變聲、音效板、快捷鍵與 App Loopback 收進一個更直覺的 Windows 聲音工具。">
   <meta property="og:url" content="https://voidyuu0113.github.io/mictool/">
   <meta property="og:image" content="https://voidyuu0113.github.io/mictool/assets/hero-mic.jpg">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="MicTool | Windows 麥克風處理、App Loopback、OBS 路由">
-  <meta name="twitter:description" content="支援特定程式 App Loopback、Talk / Sing、變聲、音效板與快捷鍵。">
+  <meta name="twitter:title" content="MicTool | Windows 即時聲音控制台">
+  <meta name="twitter:description" content="為 Windows 直播、語音與歌回設計的即時聲音控制台。">
   <meta name="twitter:image" content="https://voidyuu0113.github.io/mictool/assets/hero-mic.jpg">
-  <link rel="canonical" href="https://voidyuu0113.github.io/mictool/">
-  <link rel="icon" href="./favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-top: #f7f2ea;
-      --bg-bottom: #efe4d5;
-      --panel: rgba(255, 250, 244, 0.8);
-      --ink: #132844;
-      --muted: #64738a;
-      --line: rgba(19, 40, 68, 0.12);
-      --accent: #db6c3f;
-      --accent-2: #1b776a;
-      --accent-3: #efb24d;
-      --shadow: 0 28px 70px rgba(19, 40, 68, 0.12);
-      --radius-xl: 30px;
+      --bg: #f2efe8;
+      --bg-soft: #faf8f3;
+      --panel: rgba(255, 255, 255, 0.82);
+      --panel-solid: #ffffff;
+      --panel-strong: #10141f;
+      --line: rgba(16, 20, 31, 0.09);
+      --line-strong: rgba(16, 20, 31, 0.18);
+      --text: #10141f;
+      --muted: #5a6273;
+      --accent: #0f766e;
+      --accent-2: #d97706;
+      --shadow: 0 22px 48px rgba(16, 20, 31, 0.08);
+      --radius-xl: 28px;
       --radius-lg: 22px;
-      --radius-md: 18px;
-      --max: 1160px;
-      --hero-shift: 0px;
+      --radius-md: 16px;
+      --max: 1180px;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
-    html { scroll-behavior: smooth; }
+    html {
+      scroll-behavior: smooth;
+    }
 
     body {
       margin: 0;
       font-family: "Noto Sans TC", sans-serif;
-      color: var(--ink);
+      color: var(--text);
       background:
-        radial-gradient(circle at top left, rgba(239,178,77,0.23), transparent 28%),
-        radial-gradient(circle at 85% 0%, rgba(27,119,106,0.18), transparent 32%),
-        linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
-      min-height: 100vh;
-      overflow-x: hidden;
+        radial-gradient(circle at top left, rgba(15, 118, 110, 0.08), transparent 32%),
+        radial-gradient(circle at top right, rgba(217, 119, 6, 0.08), transparent 28%),
+        linear-gradient(180deg, #f6f4ef 0%, #f2efe8 100%);
+      line-height: 1.6;
     }
 
     body::before {
@@ -62,12 +66,17 @@
       position: fixed;
       inset: 0;
       pointer-events: none;
-      opacity: 0.28;
       background-image:
-        linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
-      background-size: 32px 32px;
-      mask-image: radial-gradient(circle at center, black 10%, transparent 80%);
+        linear-gradient(rgba(16, 20, 31, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 20, 31, 0.02) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.28), transparent 78%);
+      z-index: -1;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
     }
 
     a {
@@ -75,516 +84,638 @@
       text-decoration: none;
     }
 
-    img {
-      max-width: 100%;
-      display: block;
+    .shell {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
     }
 
-    .shell {
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 22px 18px 84px;
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      backdrop-filter: blur(14px);
+      background: rgba(242, 239, 232, 0.76);
+      border-bottom: 1px solid rgba(16, 20, 31, 0.06);
     }
 
     .nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 18px;
-      padding: 12px 16px;
-      margin-bottom: 22px;
-      border: 1px solid rgba(255,255,255,0.65);
-      border-radius: 999px;
-      background: rgba(255,255,255,0.52);
-      backdrop-filter: blur(14px);
-      box-shadow: 0 12px 28px rgba(19, 40, 68, 0.08);
+      gap: 20px;
+      min-height: 76px;
     }
 
     .brand {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 12px;
-      font-family: "Space Grotesk", sans-serif;
-      font-weight: 700;
-      letter-spacing: 0.03em;
+      font-family: "Manrope", sans-serif;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      font-size: 1.08rem;
     }
 
     .brand-mark {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, var(--accent), var(--accent-3));
-      position: relative;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, #0f766e, #115e59 65%, #10141f);
+      box-shadow: 0 14px 24px rgba(15, 118, 110, 0.22);
     }
 
-    .brand-mark::before,
-    .brand-mark::after {
-      content: "";
-      position: absolute;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.95);
-    }
-
-    .brand-mark::before {
-      width: 7px;
-      height: 22px;
-      left: 11px;
-      top: 9px;
-      box-shadow: 11px 0 0 rgba(255,255,255,0.95);
-    }
-
-    .brand-mark::after {
+    .brand-mark svg {
       width: 22px;
-      height: 7px;
-      left: 9px;
-      top: 16px;
+      height: 22px;
     }
 
     .nav-links {
       display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
+      align-items: center;
+      gap: 26px;
       color: var(--muted);
       font-size: 0.95rem;
     }
 
-    .surface {
-      border: 1px solid rgba(255,255,255,0.68);
-      border-radius: var(--radius-xl);
-      background: var(--panel);
-      backdrop-filter: blur(18px);
-      box-shadow: var(--shadow);
+    .nav-links a {
+      position: relative;
+      transition: color 180ms ease;
+    }
+
+    .nav-links a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -7px;
+      width: 100%;
+      height: 2px;
+      border-radius: 999px;
+      background: var(--accent);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 180ms ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    .nav-links a:hover::after {
+      transform: scaleX(1);
+    }
+
+    .nav-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font-weight: 700;
+      font-size: 0.96rem;
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
+      cursor: pointer;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+    }
+
+    .button-primary {
+      color: #fff;
+      background: linear-gradient(135deg, #10141f, #1c2434);
+      box-shadow: 0 18px 30px rgba(16, 20, 31, 0.18);
+    }
+
+    .button-secondary {
+      border-color: rgba(16, 20, 31, 0.12);
+      background: rgba(255, 255, 255, 0.74);
+      color: var(--text);
     }
 
     .hero {
-      display: grid;
-      grid-template-columns: 0.95fr 1.05fr;
-      gap: 22px;
-      padding: 28px;
-      margin-bottom: 22px;
-      overflow: hidden;
-      position: relative;
+      padding: 54px 0 48px;
     }
 
-    .hero::after {
-      content: "";
-      position: absolute;
-      right: -120px;
-      bottom: -120px;
-      width: 320px;
-      height: 320px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(27,119,106,0.16), transparent 68%);
-      pointer-events: none;
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.02fr) minmax(360px, 0.98fr);
+      align-items: center;
+      gap: 40px;
     }
 
     .eyebrow {
       display: inline-flex;
       align-items: center;
-      min-height: 34px;
-      padding: 0 14px;
+      gap: 10px;
+      padding: 8px 14px;
       border-radius: 999px;
-      background: rgba(219,108,63,0.12);
-      color: #8a4829;
-      font-size: 0.9rem;
-      font-weight: 700;
-      margin-bottom: 18px;
+      background: rgba(255, 255, 255, 0.66);
+      border: 1px solid rgba(16, 20, 31, 0.08);
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 600;
     }
 
-    h1, h2, h3 {
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent), #2dd4bf);
+      box-shadow: 0 0 0 6px rgba(15, 118, 110, 0.12);
+    }
+
+    h1,
+    h2,
+    h3 {
       margin: 0;
-      line-height: 1.05;
-    }
-
-    h1, h2 {
-      font-family: "Space Grotesk", "Noto Sans TC", sans-serif;
+      font-family: "Manrope", "Noto Sans TC", sans-serif;
       letter-spacing: -0.04em;
+      line-height: 1.04;
     }
 
     h1 {
-      max-width: 9.5ch;
-      font-size: clamp(2.9rem, 7vw, 5.2rem);
+      margin-top: 18px;
+      max-width: 10ch;
+      font-size: clamp(2.45rem, 4.2vw, 4.3rem);
     }
 
     .hero-copy {
-      align-self: center;
-      position: relative;
-      z-index: 1;
+      max-width: 560px;
     }
 
-    .lead {
-      max-width: 30rem;
-      margin: 16px 0 0;
+    .hero-copy p {
+      margin: 18px 0 0;
+      max-width: 32rem;
       color: var(--muted);
-      font-size: 1.03rem;
-      line-height: 1.85;
+      font-size: 1.02rem;
     }
 
-    .cta-row {
+    .hero-actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 24px;
+      align-items: center;
+      gap: 14px;
+      margin-top: 28px;
     }
 
-    .cta {
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 12px;
+      margin-top: 28px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .hero-meta span {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      min-height: 52px;
-      padding: 0 22px;
-      border-radius: 999px;
-      font-weight: 700;
-      transition: transform 180ms ease, box-shadow 180ms ease;
-    }
-
-    .cta:hover {
-      transform: translateY(-1px);
-    }
-
-    .cta-primary {
-      background: linear-gradient(135deg, var(--accent), #ef8a48);
-      color: #fff;
-      box-shadow: 0 18px 34px rgba(219,108,63,0.26);
-    }
-
-    .cta-secondary {
-      background: rgba(255,255,255,0.66);
-      border: 1px solid var(--line);
-    }
-
-    .mini-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 18px;
-    }
-
-    .mini-tags span {
+      gap: 8px;
       padding: 9px 12px;
       border-radius: 999px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,0.58);
-      color: var(--muted);
-      font-size: 0.9rem;
+      background: rgba(255, 255, 255, 0.64);
+      border: 1px solid rgba(16, 20, 31, 0.08);
     }
 
-    .hero-media {
+    .hero-visual {
       position: relative;
-      min-height: 420px;
     }
 
-    .hero-frame {
-      position: absolute;
-      inset: 0;
-      border-radius: 26px;
+    .visual-card {
+      position: relative;
       overflow: hidden;
-      background: #102039;
-      box-shadow: 0 26px 56px rgba(19, 40, 68, 0.16);
-      transform: translateY(calc(var(--hero-shift) * 0.18));
+      border-radius: 30px;
+      padding: 18px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.7));
+      border: 1px solid rgba(16, 20, 31, 0.08);
+      box-shadow: var(--shadow);
     }
 
-    .hero-frame img {
+    .visual-card img {
+      aspect-ratio: 4 / 3.25;
       width: 100%;
-      height: 100%;
+      border-radius: 22px;
       object-fit: cover;
-      filter: saturate(1.03) contrast(1.04);
-      transform: scale(1.03);
+      object-position: center;
+      transform: translateY(var(--hero-shift, 0px));
+      transition: transform 220ms ease;
     }
 
-    .hero-overlay {
+    .visual-panel {
       position: absolute;
-      inset: auto 0 0 0;
-      padding: 22px;
-      background: linear-gradient(180deg, transparent, rgba(8, 18, 31, 0.76));
-      color: #fff;
+      right: -14px;
+      bottom: 26px;
+      width: min(230px, 56%);
+      padding: 18px;
+      border-radius: 24px;
+      background: rgba(16, 20, 31, 0.92);
+      color: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 24px 36px rgba(16, 20, 31, 0.24);
     }
 
-    .hero-overlay strong {
+    .visual-panel strong {
       display: block;
-      font-family: "Space Grotesk", sans-serif;
-      font-size: 1.6rem;
-      margin-bottom: 6px;
+      font-family: "Manrope", sans-serif;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
     }
 
-    .hero-overlay span {
-      color: rgba(255,255,255,0.78);
-      line-height: 1.7;
-    }
-
-    .floating-note {
-      position: absolute;
-      padding: 12px 14px;
-      border-radius: 18px;
-      background: rgba(255,255,255,0.84);
-      border: 1px solid rgba(255,255,255,0.7);
-      backdrop-filter: blur(14px);
-      box-shadow: 0 18px 40px rgba(19, 40, 68, 0.14);
-      font-size: 0.92rem;
-      line-height: 1.5;
-      color: var(--ink);
-      animation: floaty 4.8s ease-in-out infinite;
-    }
-
-    .floating-note strong {
-      display: block;
-      font-family: "Space Grotesk", sans-serif;
-      margin-bottom: 4px;
-    }
-
-    .note-a {
-      top: 22px;
-      right: 24px;
-      max-width: 180px;
-    }
-
-    .note-b {
-      left: -12px;
-      bottom: 34px;
-      max-width: 205px;
-      animation-delay: 0.8s;
-    }
-
-    .banner {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 16px;
-      align-items: center;
-      padding: 22px 24px;
-      margin-bottom: 22px;
-    }
-
-    .banner-icon {
-      width: 58px;
-      height: 58px;
-      border-radius: 18px;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(135deg, rgba(27,119,106,0.16), rgba(239,178,77,0.2));
-    }
-
-    .banner p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.8;
+    .visual-panel p {
+      margin: 8px 0 0;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.74);
     }
 
     .section {
-      padding: 26px;
-      margin-bottom: 22px;
+      padding: 34px 0;
     }
 
-    .section-head {
+    .section-heading {
       display: flex;
-      align-items: end;
-      justify-content: space-between;
-      gap: 18px;
-      margin-bottom: 18px;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 620px;
+      margin-bottom: 28px;
     }
 
-    .section-head p {
-      max-width: 42rem;
+    .section-heading h2 {
+      font-size: clamp(2rem, 3vw, 2.75rem);
+    }
+
+    .section-heading p {
       margin: 0;
       color: var(--muted);
-      line-height: 1.8;
     }
 
-    h2 {
-      font-size: clamp(1.9rem, 4vw, 2.6rem);
-    }
-
-    .card-grid {
+    .grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
+      gap: 18px;
+    }
+
+    .feature-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
     .card {
-      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      padding: 24px;
       border-radius: var(--radius-lg);
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,0.64);
+      background: var(--panel);
+      border: 1px solid rgba(16, 20, 31, 0.08);
+      box-shadow: 0 10px 26px rgba(16, 20, 31, 0.05);
+      backdrop-filter: blur(10px);
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.34), transparent 65%);
+      pointer-events: none;
     }
 
     .icon-wrap {
-      width: 52px;
-      height: 52px;
-      display: grid;
+      width: 48px;
+      height: 48px;
+      display: inline-grid;
       place-items: center;
+      margin-bottom: 18px;
       border-radius: 16px;
-      margin-bottom: 14px;
-      background: linear-gradient(135deg, rgba(219,108,63,0.14), rgba(27,119,106,0.16));
+      color: #fff;
+      background: linear-gradient(135deg, #0f766e, #115e59 64%, #10141f);
+      box-shadow: 0 14px 26px rgba(15, 118, 110, 0.18);
+    }
+
+    .icon-wrap svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .card h3 {
+      font-size: 1.18rem;
+      letter-spacing: -0.03em;
     }
 
     .card p {
       margin: 10px 0 0;
       color: var(--muted);
-      line-height: 1.78;
+      font-size: 0.95rem;
     }
 
-    .use-grid {
+    .workflow {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      align-items: stretch;
+    }
+
+    .workflow-card {
+      padding: 28px;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(16, 20, 31, 0.08);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.66));
+      box-shadow: var(--shadow);
+    }
+
+    .steps {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-    }
-
-    .use {
-      padding: 18px;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,0.58);
-    }
-
-    .use span {
-      display: inline-flex;
-      align-items: center;
-      min-height: 30px;
-      padding: 0 10px;
-      margin-bottom: 12px;
-      border-radius: 999px;
-      background: rgba(27,119,106,0.1);
-      color: var(--accent-2);
-      font-size: 0.82rem;
-      font-weight: 700;
-    }
-
-    .use p {
-      margin: 8px 0 0;
-      color: var(--muted);
-      line-height: 1.75;
-    }
-
-    .step-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px;
     }
 
     .step {
-      position: relative;
-      padding: 18px 18px 18px 72px;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,0.6);
+      display: grid;
+      grid-template-columns: 46px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(16, 20, 31, 0.08);
     }
 
-    .step::before {
-      content: attr(data-step);
-      position: absolute;
-      left: 18px;
-      top: 18px;
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
+    .step-number {
+      width: 46px;
+      height: 46px;
       display: grid;
       place-items: center;
-      background: linear-gradient(135deg, var(--accent-2), #2e9587);
+      border-radius: 14px;
+      background: #10141f;
       color: #fff;
-      font-family: "Space Grotesk", sans-serif;
-      font-weight: 700;
+      font-family: "Manrope", sans-serif;
+      font-weight: 800;
+    }
+
+    .step h3 {
+      font-size: 1.04rem;
     }
 
     .step p {
-      margin: 8px 0 0;
-      color: var(--muted);
-      line-height: 1.75;
-    }
-
-    .download {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: center;
-      gap: 18px;
-      padding: 28px;
-      background:
-        radial-gradient(circle at top right, rgba(239,178,77,0.18), transparent 34%),
-        linear-gradient(135deg, #132844, #174057 58%, #17605b);
-      color: #fff;
-      box-shadow: 0 24px 54px rgba(19, 40, 68, 0.19);
-    }
-
-    .download p {
-      margin: 10px 0 0;
-      color: rgba(255,255,255,0.78);
-      line-height: 1.82;
-    }
-
-    .footer {
-      margin-top: 18px;
-      text-align: center;
+      margin: 6px 0 0;
       color: var(--muted);
       font-size: 0.94rem;
-      line-height: 1.8;
+    }
+
+    .stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .mini-panel {
+      display: grid;
+      gap: 10px;
+      padding: 20px;
+      border-radius: 22px;
+      background: #10141f;
+      color: rgba(255, 255, 255, 0.84);
+    }
+
+    .mini-panel strong {
+      font-family: "Manrope", sans-serif;
+      font-size: 1.15rem;
+    }
+
+    .mini-panel p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.94rem;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.88rem;
+    }
+
+    .use-case-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .use-case {
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid rgba(16, 20, 31, 0.08);
+    }
+
+    .use-case span {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(15, 118, 110, 0.1);
+      color: var(--accent);
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .use-case h3 {
+      margin-top: 16px;
+      font-size: 1.18rem;
+    }
+
+    .use-case p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .cta {
+      padding: 28px;
+      border-radius: 32px;
+      background:
+        radial-gradient(circle at top right, rgba(217, 119, 6, 0.18), transparent 34%),
+        linear-gradient(135deg, #111827, #182235 72%, #0f172a);
+      color: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 22px 40px rgba(16, 20, 31, 0.18);
+    }
+
+    .cta-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 22px;
+      align-items: center;
+    }
+
+    .cta h2 {
+      font-size: clamp(1.95rem, 3vw, 2.7rem);
+    }
+
+    .cta p {
+      margin: 10px 0 0;
+      max-width: 36rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .cta .button-primary {
+      background: linear-gradient(135deg, #ffffff, #dce5f0);
+      color: #10141f;
+      box-shadow: none;
+    }
+
+    footer {
+      padding: 26px 0 44px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .footer-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px 18px;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 18px;
     }
 
     [data-reveal] {
       opacity: 0;
       transform: translateY(24px);
-      transition: opacity 680ms ease, transform 680ms ease;
+      transition: opacity 520ms ease, transform 520ms ease;
     }
 
-    [data-reveal].is-visible {
+    [data-reveal].revealed {
       opacity: 1;
       transform: translateY(0);
     }
 
-    @keyframes floaty {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
-    }
+    @media (max-width: 1040px) {
+      .nav-links {
+        display: none;
+      }
 
-    @media (max-width: 980px) {
-      .hero,
-      .card-grid,
-      .use-grid,
-      .step-grid,
-      .download {
+      .hero-grid,
+      .workflow,
+      .cta-grid {
         grid-template-columns: 1fr;
       }
 
-      .hero-media {
-        min-height: 380px;
+      .feature-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      .note-b {
-        left: 18px;
+      .use-case-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding-top: 38px;
+      }
+
+      h1 {
+        max-width: none;
+      }
+
+      .visual-panel {
+        right: 16px;
+        bottom: 16px;
       }
     }
 
     @media (max-width: 720px) {
       .shell {
-        padding: 16px 14px 64px;
+        width: min(var(--max), calc(100% - 20px));
       }
 
       .nav {
-        flex-direction: column;
-        align-items: flex-start;
-        border-radius: 24px;
+        min-height: 70px;
       }
 
-      .hero,
-      .section,
-      .download,
-      .banner {
-        padding: 22px;
+      .nav-actions .button-secondary {
+        display: none;
       }
 
-      .hero-media {
-        min-height: 320px;
-      }
-
-      .floating-note {
-        max-width: 160px;
-        font-size: 0.86rem;
+      .hero {
+        padding: 28px 0 34px;
       }
 
       h1 {
-        max-width: 100%;
+        font-size: 2.35rem;
       }
 
-      .step {
-        padding-left: 66px;
+      .hero-copy p,
+      .section-heading p {
+        font-size: 0.96rem;
+      }
+
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card,
+      .use-case,
+      .workflow-card,
+      .cta {
+        padding: 22px;
+      }
+
+      .visual-card {
+        padding: 12px;
+      }
+
+      .visual-panel {
+        position: static;
+        width: 100%;
+        margin-top: 12px;
+      }
+
+      .hero-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .footer-row,
+      .footer-links {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+
+      [data-reveal] {
+        opacity: 1;
+        transform: none;
       }
     }
   </style>
@@ -595,10 +726,10 @@
     "name": "MicTool",
     "applicationCategory": "MultimediaApplication",
     "operatingSystem": "Windows",
-    "description": "MicTool 是一款給 Windows 使用的即時聲音工具，支援 Talk / Sing、變聲、Soundboard、全域快捷鍵、App Loopback 與 OBS 路由。",
-    "url": "https://voidyuu0113.github.io/mictool/",
+    "description": "MicTool 是為 Windows 設計的即時聲音控制台，整合 Talk、Sing、Voice、Soundboard、Hotkeys 與 App Loopback，快速接進 OBS 與直播流程。",
     "downloadUrl": "https://github.com/voidyuu0113/mictool/releases/latest",
-    "author": {
+    "softwareVersion": "v0.1.3-no-ai",
+    "publisher": {
       "@type": "Person",
       "name": "結小語 Voidyuu"
     }
@@ -606,194 +737,257 @@
   </script>
 </head>
 <body>
-  <div class="shell">
-    <header class="nav">
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true"></span>
+  <header class="site-header">
+    <div class="shell nav">
+      <a class="brand" href="#top" aria-label="MicTool 首頁">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="3.5" width="6" height="11" rx="3"></rect>
+            <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"></path>
+            <path d="M12 18v3"></path>
+            <path d="M8.5 21h7"></path>
+          </svg>
+        </span>
         <span>MicTool</span>
-      </div>
-      <nav class="nav-links" aria-label="Main Navigation">
-        <a href="#features">特色</a>
-        <a href="#use-cases">情境</a>
-        <a href="#start">開始使用</a>
-        <a href="https://github.com/voidyuu0113/mictool" target="_blank" rel="noreferrer">GitHub</a>
+      </a>
+      <nav class="nav-links" aria-label="主要導覽">
+        <a href="#features">功能</a>
+        <a href="#workflow">流程</a>
+        <a href="#scenes">情境</a>
+        <a href="#download">下載</a>
       </nav>
-    </header>
-
-    <section class="surface hero" data-reveal>
-      <div class="hero-copy">
-        <div class="eyebrow">Windows 即時聲音工具</div>
-        <h1>讓麥克風和指定程式聲音，走同一條輸出鏈</h1>
-        <p class="lead">
-          MicTool 把 Talk / Sing、變聲、Soundboard、全域快捷鍵和 <strong>App Loopback</strong> 放進同一套工作流程。你可以更精準地把聲音送進 OBS、Discord 或其他軟體。
-        </p>
-        <div class="cta-row">
-          <a class="cta cta-primary" href="https://github.com/voidyuu0113/mictool/releases/latest" target="_blank" rel="noreferrer">下載最新版本</a>
-          <a class="cta cta-secondary" href="https://github.com/voidyuu0113/mictool/blob/codex/no-ai-exe/README.md" target="_blank" rel="noreferrer">查看使用教學</a>
-        </div>
-        <div class="mini-tags">
-          <span>App Loopback</span>
-          <span>OBS Ready</span>
-          <span>Soundboard</span>
-          <span>Global Hotkeys</span>
-        </div>
+      <div class="nav-actions">
+        <a class="button button-secondary" href="https://github.com/voidyuu0113/mictool/blob/codex/no-ai-exe/README.md">閱讀 README</a>
+        <a class="button button-primary" href="https://github.com/voidyuu0113/mictool/releases/latest">下載</a>
       </div>
-      <div class="hero-media" aria-label="Microphone hero image">
-        <div class="hero-frame">
-          <img src="./assets/hero-mic.jpg" alt="錄音環境中的麥克風與筆電">
-          <div class="hero-overlay">
-            <strong>App Loopback</strong>
-            <span>挑特定程式，不必把整個系統聲音一起送出去</span>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="shell hero-grid">
+        <div class="hero-copy" data-reveal>
+          <span class="eyebrow">Windows 即時聲音控制台</span>
+          <h1>把聲音流程整理成一個地方</h1>
+          <p>MicTool 把 Talk、Sing、Voice、Soundboard、Hotkeys 與 App Loopback 收進同一套操作介面，讓你更快把聲音整理好，再送進 OBS 或日常語音流程。</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="https://github.com/voidyuu0113/mictool/releases/latest">下載 Windows 版本</a>
+            <a class="button button-secondary" href="https://github.com/voidyuu0113/mictool/blob/codex/no-ai-exe/README.md">快速開始</a>
+          </div>
+          <div class="hero-meta" aria-label="MicTool 核心資訊">
+            <span>Talk / Sing / Voice</span>
+            <span>Soundboard + Hotkeys</span>
+            <span>OBS / Monitor / Routing</span>
           </div>
         </div>
-        <div class="floating-note note-a">
-          <strong>指定程式</strong>
-          伴奏、遊戲、播放器、瀏覽器都能分開處理
+
+        <div class="hero-visual" data-reveal>
+          <div class="visual-card">
+            <img src="./assets/hero-mic.jpg" alt="麥克風與錄音工作區">
+          </div>
+          <div class="visual-panel">
+            <strong>更像一個聲音工作台</strong>
+            <p>不是一堆分散小工具，而是一個能把麥克風處理、路由與演出控制放在一起的桌面工作流程。</p>
+          </div>
         </div>
-        <div class="floating-note note-b">
-          <strong>更少繞路</strong>
-          麥克風、音效與路由整合在同一個介面
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="shell">
+        <div class="section-heading" data-reveal>
+          <h2>核心功能</h2>
+          <p>把最常用的即時聲音功能放進同一個流程裡，不需要在多套工具間反覆切換。</p>
+        </div>
+        <div class="grid feature-grid">
+          <article class="card" data-reveal>
+            <span class="icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 13a8 8 0 1 1 16 0"></path>
+                <path d="M12 5v8"></path>
+                <path d="M7 13h10"></path>
+              </svg>
+            </span>
+            <h3>Talk / Sing</h3>
+            <p>針對講話與唱歌分開調整，保留即時處理鏈，讓你更快進入可用狀態。</p>
+          </article>
+          <article class="card" data-reveal>
+            <span class="icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M7 4v16"></path>
+                <path d="M12 7v10"></path>
+                <path d="M17 5v14"></path>
+              </svg>
+            </span>
+            <h3>Voice</h3>
+            <p>切換不同變聲模式，搭配現有處理鏈與輸出流程，不用額外重建整套設定。</p>
+          </article>
+          <article class="card" data-reveal>
+            <span class="icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="4" width="6" height="6" rx="1.5"></rect>
+                <rect x="14" y="4" width="6" height="6" rx="1.5"></rect>
+                <rect x="4" y="14" width="6" height="6" rx="1.5"></rect>
+                <path d="M17 20v-6"></path>
+                <path d="M14 17h6"></path>
+              </svg>
+            </span>
+            <h3>Soundboard + Hotkeys</h3>
+            <p>支援多音效匯入、個別音量與全域快捷鍵，背景執行時也能直接觸發。</p>
+          </article>
+          <article class="card" data-reveal>
+            <span class="icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3.5" y="5" width="17" height="11" rx="2"></rect>
+                <path d="M8 19h8"></path>
+                <path d="M10.5 9.5h7"></path>
+                <path d="M7.5 9.5h.01"></path>
+                <path d="M7.5 12.5h.01"></path>
+                <path d="M10.5 12.5h4.5"></path>
+              </svg>
+            </span>
+            <h3>App Loopback</h3>
+            <p>把指定程式的聲音加入你的輸出鏈，不需要把整個系統聲音都一起丟進去。</p>
+          </article>
         </div>
       </div>
     </section>
 
-    <section class="surface banner" data-reveal>
-      <div class="banner-icon" aria-hidden="true">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1b776a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3.5" y="5" width="7" height="14" rx="2"></rect>
-          <rect x="13.5" y="8" width="7" height="8" rx="2"></rect>
-          <path d="M10.5 12h3"></path>
-        </svg>
-      </div>
-      <p>Windows 上能直接選「特定程式」做 loopback 的桌面工具不多。MicTool 的重點不是只是混系統音，而是讓你有更細的程式級控制。</p>
-    </section>
-
-    <section id="features" class="surface section" data-reveal>
-      <div class="section-head">
-        <h2>核心功能</h2>
-        <p>少一點字，多一點可視化。</p>
-      </div>
-      <div class="card-grid">
-        <article class="card">
-          <div class="icon-wrap" aria-hidden="true">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#132844" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="5" width="18" height="14" rx="3"></rect>
-              <path d="M8 15c1.1-2 2.1-3 4-3s2.9 1 4 3"></path>
-              <path d="M12 8v4"></path>
-            </svg>
+    <section class="section" id="workflow">
+      <div class="shell">
+        <div class="grid workflow">
+          <div class="workflow-card" data-reveal>
+            <div class="section-heading" style="margin-bottom: 20px;">
+              <h2>使用流程</h2>
+              <p>頁面結構以實際操作順序為主，不用先理解所有參數，先把聲音接起來就能開始。</p>
+            </div>
+            <div class="steps">
+              <article class="step">
+                <div class="step-number">1</div>
+                <div>
+                  <h3>選裝置與模式</h3>
+                  <p>設定 Input、Output、Monitor，然後在 Talk、Sing 或 Voice 之間切換你現在要用的流程。</p>
+                </div>
+              </article>
+              <article class="step">
+                <div class="step-number">2</div>
+                <div>
+                  <h3>補上需要的控制</h3>
+                  <p>如果有伴奏、遊戲或播放器，就把指定程式聲音一起加進來；如果是演出或實況，再配上 Soundboard 和 Hotkeys。</p>
+                </div>
+              </article>
+              <article class="step">
+                <div class="step-number">3</div>
+                <div>
+                  <h3>送進 OBS 或語音軟體</h3>
+                  <p>整理好的輸出可以直接進 OBS、Discord 或其他 Windows 聲音流程，不必再拆成多套工具接線。</p>
+                </div>
+              </article>
+            </div>
           </div>
-          <h3>App Loopback</h3>
-          <p>只混你選的程式聲音，不是整個 Windows 系統音一起進來。</p>
-        </article>
-        <article class="card">
-          <div class="icon-wrap" aria-hidden="true">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#132844" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="3" width="6" height="11" rx="3"></rect>
-              <path d="M6 11v1a6 6 0 0 0 12 0v-1"></path>
-              <path d="M12 18v3"></path>
-              <path d="M9 21h6"></path>
-            </svg>
+
+          <div class="stack" data-reveal>
+            <aside class="mini-panel">
+              <strong>以工作流程為中心</strong>
+              <p>把人聲處理、模式切換、音效與路由整理成一套更容易理解的桌面操作介面。</p>
+            </aside>
+            <aside class="workflow-card">
+              <div class="section-heading" style="margin-bottom: 16px;">
+                <h2 style="font-size: 1.55rem;">適合的使用方式</h2>
+              </div>
+              <div class="chip-row">
+                <span class="chip">直播人聲整理</span>
+                <span class="chip">OBS 音訊路由</span>
+                <span class="chip">歌回與伴奏</span>
+                <span class="chip">Discord / 遊戲語音</span>
+                <span class="chip">音效板觸發</span>
+                <span class="chip">背景快捷鍵</span>
+              </div>
+            </aside>
           </div>
-          <h3>Talk / Sing / Voice</h3>
-          <p>講話、唱歌、變聲各有不同節奏，不必每次都從零開始調。</p>
-        </article>
-        <article class="card">
-          <div class="icon-wrap" aria-hidden="true">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#132844" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="4" y="4" width="6" height="6" rx="1.5"></rect>
-              <rect x="14" y="4" width="6" height="6" rx="1.5"></rect>
-              <rect x="4" y="14" width="6" height="6" rx="1.5"></rect>
-              <path d="M16 13v7"></path>
-              <path d="M20 16.5h-8"></path>
-            </svg>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="scenes">
+      <div class="shell">
+        <div class="section-heading" data-reveal>
+          <h2>常見情境</h2>
+          <p>不同使用場景可以直接沿用同一套聲音工作台，不用每次重新拼裝流程。</p>
+        </div>
+        <div class="grid use-case-grid">
+          <article class="use-case" data-reveal>
+            <span>直播</span>
+            <h3>把麥克風整理後送進 OBS</h3>
+            <p>用 Talk 或 Sing 模式先整理人聲，再決定是否加入程式聲音與音效板，最後送到直播輸出。</p>
+          </article>
+          <article class="use-case" data-reveal>
+            <span>語音</span>
+            <h3>日常通話也能維持固定音色</h3>
+            <p>快捷鍵、Monitor 和裝置切換都在同一套介面裡，開會、聊天或遊戲連麥都比較好維護。</p>
+          </article>
+          <article class="use-case" data-reveal>
+            <span>演出</span>
+            <h3>把操作集中起來比較不容易手忙腳亂</h3>
+            <p>變聲、模式切換、音效觸發與程式音訊整合都集中管理，現場操作更清楚。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="download">
+      <div class="shell">
+        <div class="cta" data-reveal>
+          <div class="cta-grid">
+            <div>
+              <h2>下載後就能開始接你的聲音流程</h2>
+              <p>Release 內提供 Windows 可執行版本；如果需要更完整的安裝與使用說明，README 也已經整理好。</p>
+            </div>
+            <div class="hero-actions" style="margin-top: 0;">
+              <a class="button button-primary" href="https://github.com/voidyuu0113/mictool/releases/latest">前往 Release</a>
+              <a class="button button-secondary" href="https://github.com/voidyuu0113/mictool/blob/codex/no-ai-exe/README.md">閱讀 README</a>
+            </div>
           </div>
-          <h3>Soundboard + Hotkeys</h3>
-          <p>音效、快捷鍵、背景操作與系統匣，適合演出中快速切換。</p>
-        </article>
+        </div>
       </div>
     </section>
+  </main>
 
-    <section id="use-cases" class="surface section" data-reveal>
-      <div class="section-head">
-        <h2>適合這些情境</h2>
-        <p>用情境理解，比參數列表更快。</p>
+  <footer>
+    <div class="shell footer-row">
+      <div>MicTool by 結小語 Voidyuu</div>
+      <div class="footer-links">
+        <a href="https://github.com/voidyuu0113/mictool">GitHub</a>
+        <a href="https://github.com/voidyuu0113/mictool/releases/latest">Release</a>
       </div>
-      <div class="use-grid">
-        <article class="use">
-          <span>直播</span>
-          <h3>OBS 路由</h3>
-          <p>把麥克風處理後送進虛擬音訊裝置，再交給 OBS。</p>
-        </article>
-        <article class="use">
-          <span>語音</span>
-          <h3>Discord / 遊戲</h3>
-          <p>保留麥克風控制，必要時再加上特定程式聲音。</p>
-        </article>
-        <article class="use">
-          <span>表演</span>
-          <h3>歌回 / 互動</h3>
-          <p>伴奏、音效板、快捷鍵和變聲可以集中管理。</p>
-        </article>
-      </div>
-    </section>
-
-    <section id="start" class="surface section" data-reveal>
-      <div class="section-head">
-        <h2>開始使用</h2>
-        <p>第一次上手先照這三步。</p>
-      </div>
-      <div class="step-grid">
-        <article class="step" data-step="1">
-          <h3>選 Input / Output</h3>
-          <p>先設定麥克風和主輸出，需要時再補 Monitor。</p>
-        </article>
-        <article class="step" data-step="2">
-          <h3>選模式與 Loopback</h3>
-          <p>講話用 Talk，唱歌用 Sing，需要混伴奏就加 App Loopback。</p>
-        </article>
-        <article class="step" data-step="3">
-          <h3>送進 OBS 或其他軟體</h3>
-          <p>把輸出指到你要的虛擬裝置或目的地，就能開始使用。</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="surface download" data-reveal>
-      <div>
-        <h2>想直接下載？</h2>
-        <p>從 GitHub Releases 下載後解壓縮整個資料夾，執行 `MicTool-NoAI.exe` 就能開始。</p>
-      </div>
-      <div class="cta-row" style="justify-content:flex-end; margin-top:0;">
-        <a class="cta cta-primary" href="https://github.com/voidyuu0113/mictool/releases/latest" target="_blank" rel="noreferrer">前往下載</a>
-      </div>
-    </section>
-
-    <footer class="footer">
-      <p>MicTool for Windows | Real-time microphone processing, App Loopback, soundboard, hotkeys, and OBS routing</p>
-      <p>Hero photo from Unsplash</p>
-    </footer>
-  </div>
+    </div>
+  </footer>
 
   <script>
-    const revealItems = document.querySelectorAll("[data-reveal]");
-    const observer = new IntersectionObserver((entries) => {
+    const reveals = document.querySelectorAll('[data-reveal]');
+    const revealObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          entry.target.classList.add("is-visible");
-          observer.unobserve(entry.target);
+          entry.target.classList.add('revealed');
+          revealObserver.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.16, rootMargin: "0px 0px -40px 0px" });
+    }, { threshold: 0.18, rootMargin: '0px 0px -30px 0px' });
 
-    revealItems.forEach((item) => observer.observe(item));
+    reveals.forEach((node) => revealObserver.observe(node));
 
-    const onScroll = () => {
-      const shift = Math.min(window.scrollY * 0.18, 36);
-      document.documentElement.style.setProperty("--hero-shift", `${shift}px`);
-    };
+    const heroImage = document.querySelector('.visual-card img');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
+    if (heroImage && !reducedMotion) {
+      const updateHeroShift = () => {
+        const offset = Math.min(window.scrollY * 0.08, 18);
+        heroImage.style.setProperty('--hero-shift', `${offset}px`);
+      };
+
+      updateHeroShift();
+      window.addEventListener('scroll', updateHeroShift, { passive: true });
+    }
   </script>
 </body>
 </html>
