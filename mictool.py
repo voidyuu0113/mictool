@@ -21,6 +21,7 @@ import threading
 import ctypes
 import webbrowser
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -65,6 +66,57 @@ _STRINGS: dict[str, dict[str, str]] = {
     'tab_help':     {'zh_tw': '說明', 'en': 'Help',     'ja': 'ヘルプ', 'ko': '도움말'},
     'tab_about':    {'zh_tw': '關於', 'en': 'About',    'ja': '情報',  'ko': '정보'},
     # ── Section headers ───────────────────────────────────────────────────────
+    'tab_live':          {'zh_tw': 'Live', 'en': 'Live', 'ja': 'Live', 'ko': 'Live'},
+    'tab_settings':      {'zh_tw': 'Settings', 'en': 'Settings', 'ja': 'Settings', 'ko': 'Settings'},
+    'live_console_title': {'zh_tw': 'Live Console', 'en': 'Live Console', 'ja': 'Live Console', 'ko': 'Live Console'},
+    'live_console_subtitle': {'zh_tw': '選擇用途、套用預設，再進入進階調整。', 'en': 'Choose a use case, apply a preset, then fine-tune the chain.', 'ja': 'Choose a use case, apply a preset, then fine-tune the chain.', 'ko': 'Choose a use case, apply a preset, then fine-tune the chain.'},
+    'live_editor_talk':  {'zh_tw': 'Talk Studio', 'en': 'Talk Studio', 'ja': 'Talk Studio', 'ko': 'Talk Studio'},
+    'live_editor_sing':  {'zh_tw': 'Sing Studio', 'en': 'Sing Studio', 'ja': 'Sing Studio', 'ko': 'Sing Studio'},
+    'live_editor_hint':  {'zh_tw': '上方模式按鈕決定目前輸出用途，這裡決定你要編輯哪一條處理鏈。', 'en': 'The mode buttons above choose the active output mode. This chooses which processing chain you are editing.', 'ja': 'The mode buttons above choose the active output mode. This chooses which processing chain you are editing.', 'ko': 'The mode buttons above choose the active output mode. This chooses which processing chain you are editing.'},
+    'preset_bar_title':  {'zh_tw': 'Preset', 'en': 'Preset', 'ja': 'Preset', 'ko': 'Preset'},
+    'preset_apply':      {'zh_tw': '套用', 'en': 'Apply', 'ja': 'Apply', 'ko': 'Apply'},
+    'preset_reset':      {'zh_tw': '重設', 'en': 'Reset', 'ja': 'Reset', 'ko': 'Reset'},
+    'settings_title':    {'zh_tw': 'Settings Hub', 'en': 'Settings Hub', 'ja': 'Settings Hub', 'ko': 'Settings Hub'},
+    'settings_subtitle': {'zh_tw': '把系統、路由、說明與關於集中在同一頁。', 'en': 'Keep system controls, routing help, and app information in one place.', 'ja': 'Keep system controls, routing help, and app information in one place.', 'ko': 'Keep system controls, routing help, and app information in one place.'},
+    'settings_interface_title': {'zh_tw': 'Interface', 'en': 'Interface', 'ja': 'Interface', 'ko': 'Interface'},
+    'settings_interface_body': {'zh_tw': '切換介面語言，並管理視窗與系統層級的行為。', 'en': 'Change the UI language and manage window-level behavior.', 'ja': 'Change the UI language and manage window-level behavior.', 'ko': 'Change the UI language and manage window-level behavior.'},
+    'settings_language_btn': {'zh_tw': '切換語言', 'en': 'Change Language', 'ja': 'Change Language', 'ko': 'Change Language'},
+    'settings_loopback_title': {'zh_tw': 'App Audio Loopback', 'en': 'App Audio Loopback', 'ja': 'App Audio Loopback', 'ko': 'App Audio Loopback'},
+    'settings_help_title': {'zh_tw': 'Help', 'en': 'Help', 'ja': 'Help', 'ko': 'Help'},
+    'settings_about_title': {'zh_tw': 'About', 'en': 'About', 'ja': 'About', 'ko': 'About'},
+    'voice_page_title':   {'zh_tw': 'Voice Lab', 'en': 'Voice Lab', 'ja': 'Voice Lab', 'ko': 'Voice Lab'},
+    'voice_page_subtitle': {'zh_tw': '切換特殊變聲模式，再微調角色音色。', 'en': 'Switch character modes first, then fine-tune the voice effect.', 'ja': 'Switch character modes first, then fine-tune the voice effect.', 'ko': 'Switch character modes first, then fine-tune the voice effect.'},
+    'soundboard_page_title': {'zh_tw': 'Soundboard', 'en': 'Soundboard', 'ja': 'Soundboard', 'ko': 'Soundboard'},
+    'soundboard_page_subtitle': {'zh_tw': '匯入音效、調整音量，並在演出中即時觸發。', 'en': 'Import clips, balance their volume, and trigger them live.', 'ja': 'Import clips, balance their volume, and trigger them live.', 'ko': 'Import clips, balance their volume, and trigger them live.'},
+    'hotkeys_page_title': {'zh_tw': 'Hotkeys', 'en': 'Hotkeys', 'ja': 'Hotkeys', 'ko': 'Hotkeys'},
+    'hotkeys_page_subtitle': {'zh_tw': '把常用切換綁成全域快捷鍵，在背景也能操作。', 'en': 'Bind common actions as global shortcuts that still work in the background.', 'ja': 'Bind common actions as global shortcuts that still work in the background.', 'ko': 'Bind common actions as global shortcuts that still work in the background.'},
+    'sec_smart_eq': {'zh_tw': 'Auto Setup', 'en': 'Auto Setup', 'ja': 'Auto Setup', 'ko': 'Auto Setup'},
+    'smart_eq_intro': {
+        'zh_tw': '按 Analyze 後正常講幾句話，系統會為 Talk 模式建議 HPF、EQ、Compressor 和 Limiter 的安全起始值。',
+        'en': 'Press Analyze, speak naturally for a few seconds, and the tool will suggest safe starting values for Talk EQ, compressor, and limiter.',
+        'ja': 'Press Analyze, speak naturally for a few seconds, and the tool will suggest safe starting values for Talk EQ, compressor, and limiter.',
+        'ko': 'Press Analyze, speak naturally for a few seconds, and the tool will suggest safe starting values for Talk EQ, compressor, and limiter.',
+    },
+    'smart_eq_mode_label': {'zh_tw': 'Mode', 'en': 'Mode', 'ja': 'Mode', 'ko': 'Mode'},
+    'smart_eq_analyze': {'zh_tw': 'Analyze', 'en': 'Analyze', 'ja': 'Analyze', 'ko': 'Analyze'},
+    'smart_eq_apply': {'zh_tw': 'Apply Setup', 'en': 'Apply Setup', 'ja': 'Apply Setup', 'ko': 'Apply Setup'},
+    'smart_eq_reset': {'zh_tw': 'Reset', 'en': 'Reset', 'ja': 'Reset', 'ko': 'Reset'},
+    'smart_eq_status_off': {'zh_tw': 'Smart EQ 已關閉', 'en': 'Smart EQ is off', 'ja': 'Smart EQ is off', 'ko': 'Smart EQ is off'},
+    'smart_eq_status_idle': {'zh_tw': '按 Analyze 產生 Talk Auto Setup 建議', 'en': 'Press Analyze to generate a Talk auto-setup suggestion', 'ja': 'Press Analyze to generate a Talk auto-setup suggestion', 'ko': 'Press Analyze to generate a Talk auto-setup suggestion'},
+    'smart_eq_status_wait_output': {'zh_tw': '啟動輸出後才會開始分析', 'en': 'Analysis starts after output is running', 'ja': 'Analysis starts after output is running', 'ko': 'Analysis starts after output is running'},
+    'smart_eq_status_wait_talk': {'zh_tw': '切到 Talk 模式後才會分析', 'en': 'Switch to Talk mode to analyze', 'ja': 'Switch to Talk mode to analyze', 'ko': 'Switch to Talk mode to analyze'},
+    'smart_eq_status_listening': {'zh_tw': '正在背景聆聽人聲', 'en': 'Listening to speech in the background', 'ja': 'Listening to speech in the background', 'ko': 'Listening to speech in the background'},
+    'smart_eq_status_recording': {'zh_tw': '請正常講話，分析中 {seconds}s', 'en': 'Speak naturally, analyzing for {seconds}s', 'ja': 'Speak naturally, analyzing for {seconds}s', 'ko': 'Speak naturally, analyzing for {seconds}s'},
+    'smart_eq_status_analyzing': {'zh_tw': '正在整理分析結果', 'en': 'Preparing the analysis result', 'ja': 'Preparing the analysis result', 'ko': 'Preparing the analysis result'},
+    'smart_eq_status_need_voice': {'zh_tw': '需要再多一點乾淨的人聲片段', 'en': 'Need a bit more clean speech', 'ja': 'Need a bit more clean speech', 'ko': 'Need a bit more clean speech'},
+    'smart_eq_status_confirming': {'zh_tw': '正在確認建議是否穩定', 'en': 'Confirming the recommendation', 'ja': 'Confirming the recommendation', 'ko': 'Confirming the recommendation'},
+    'smart_eq_status_ready': {'zh_tw': '建議已準備好', 'en': 'Recommendation is ready', 'ja': 'Recommendation is ready', 'ko': 'Recommendation is ready'},
+    'smart_eq_status_applied': {'zh_tw': '已套用 Auto Setup 建議', 'en': 'Applied the auto-setup recommendation', 'ja': 'Applied the auto-setup recommendation', 'ko': 'Applied the auto-setup recommendation'},
+    'smart_eq_status_restored': {'zh_tw': '已還原到 Auto Setup 介入前的 Talk EQ', 'en': 'Restored the Talk EQ from before auto-setup', 'ja': 'Restored the Talk EQ from before auto-setup', 'ko': 'Restored the Talk EQ from before auto-setup'},
+    'smart_eq_status_manual_pause': {'zh_tw': '偵測到手動微調，暫停自動套用 {seconds}s', 'en': 'Manual tweak detected, pausing auto-apply for {seconds}s', 'ja': 'Manual tweak detected, pausing auto-apply for {seconds}s', 'ko': 'Manual tweak detected, pausing auto-apply for {seconds}s'},
+    'smart_eq_status_cooldown': {'zh_tw': '剛套用建議，冷卻中 {seconds}s', 'en': 'Recently applied, cooling down for {seconds}s', 'ja': 'Recently applied, cooling down for {seconds}s', 'ko': 'Recently applied, cooling down for {seconds}s'},
+    'smart_eq_summary_none': {'zh_tw': '目前還沒有建議。按 Analyze 後用一般說話音量講幾句話。', 'en': 'No suggestion yet. Press Analyze, then speak naturally for a few seconds.', 'ja': 'No suggestion yet. Press Analyze, then speak naturally for a few seconds.', 'ko': 'No suggestion yet. Press Analyze, then speak naturally for a few seconds.'},
+    'smart_eq_metrics_prefix': {'zh_tw': '分析', 'en': 'Analysis', 'ja': 'Analysis', 'ko': 'Analysis'},
     'sec_noise_gate':    {'zh_tw': 'Noise Gate', 'en': 'Noise Gate', 'ja': 'Noise Gate', 'ko': 'Noise Gate'},
     'sec_hp_filter':     {'zh_tw': 'High-Pass Filter', 'en': 'High-Pass Filter', 'ja': 'High-Pass Filter', 'ko': 'High-Pass Filter'},
     'sec_low_shelf':     {'zh_tw': 'Low Shelf EQ', 'en': 'Low Shelf EQ', 'ja': 'Low Shelf EQ', 'ko': 'Low Shelf EQ'},
@@ -72,10 +124,13 @@ _STRINGS: dict[str, dict[str, str]] = {
     'sec_high_shelf':    {'zh_tw': 'High Shelf EQ', 'en': 'High Shelf EQ', 'ja': 'High Shelf EQ', 'ko': 'High Shelf EQ'},
     'sec_de_esser':      {'zh_tw': 'De-Esser  (防齒音)', 'en': 'De-Esser', 'ja': 'De-Esser', 'ko': 'De-Esser'},
     'sec_compressor':    {'zh_tw': 'Compressor', 'en': 'Compressor', 'ja': 'Compressor', 'ko': 'Compressor'},
+    'sec_expander':      {'zh_tw': 'Expander', 'en': 'Expander', 'ja': 'Expander', 'ko': 'Expander'},
+    'sec_limiter':       {'zh_tw': 'Limiter', 'en': 'Limiter', 'ja': 'Limiter', 'ko': 'Limiter'},
     'sec_output_gain':   {'zh_tw': 'Output Gain', 'en': 'Output Gain', 'ja': 'Output Gain', 'ko': 'Output Gain'},
     'sec_warmth':        {'zh_tw': 'Warmth  (Low-Mid Boost)', 'en': 'Warmth  (Low-Mid Boost)', 'ja': 'Warmth  (Low-Mid Boost)', 'ko': 'Warmth  (Low-Mid Boost)'},
     'sec_presence':      {'zh_tw': 'Presence  (Upper-Mid)', 'en': 'Presence  (Upper-Mid)', 'ja': 'Presence  (Upper-Mid)', 'ko': 'Presence  (Upper-Mid)'},
     'sec_air':           {'zh_tw': 'Air  (High Shelf)', 'en': 'Air  (High Shelf)', 'ja': 'Air  (High Shelf)', 'ko': 'Air  (High Shelf)'},
+    'sec_delay':         {'zh_tw': 'Delay', 'en': 'Delay', 'ja': 'Delay', 'ko': 'Delay'},
     'sec_reverb':        {'zh_tw': 'Reverb  (Dattorro Plate)', 'en': 'Reverb  (Dattorro Plate)', 'ja': 'Reverb  (Dattorro Plate)', 'ko': 'Reverb  (Dattorro Plate)'},
     'sec_voice_mode':    {'zh_tw': 'Voice Changer Mode', 'en': 'Voice Changer Mode', 'ja': 'Voice Changer Mode', 'ko': 'Voice Changer Mode'},
     'sec_robot':         {'zh_tw': 'Robot — 載波頻率', 'en': 'Robot — Carrier Frequency', 'ja': 'Robot — Carrier Frequency', 'ko': 'Robot — 캐리어 주파수'},
@@ -92,8 +147,12 @@ _STRINGS: dict[str, dict[str, str]] = {
     'lbl_gain':      {'zh_tw': 'Gain',      'en': 'Gain',      'ja': 'Gain',      'ko': 'Gain'},
     'lbl_q':         {'zh_tw': 'Q',         'en': 'Q',         'ja': 'Q',         'ko': 'Q'},
     'lbl_ratio':     {'zh_tw': 'Ratio',     'en': 'Ratio',     'ja': 'Ratio',     'ko': 'Ratio'},
+    'lbl_range':     {'zh_tw': 'Range',     'en': 'Range',     'ja': 'Range',     'ko': 'Range'},
     'lbl_makeup':    {'zh_tw': 'Makeup',    'en': 'Makeup',    'ja': 'Makeup',    'ko': 'Makeup'},
     'lbl_reduction': {'zh_tw': 'Reduction', 'en': 'Reduction', 'ja': 'Reduction', 'ko': 'Reduction'},
+    'lbl_ceiling':   {'zh_tw': 'Ceiling',   'en': 'Ceiling',   'ja': 'Ceiling',   'ko': 'Ceiling'},
+    'lbl_time':      {'zh_tw': 'Time',      'en': 'Time',      'ja': 'Time',      'ko': 'Time'},
+    'lbl_feedback':  {'zh_tw': 'Feedback',  'en': 'Feedback',  'ja': 'Feedback',  'ko': 'Feedback'},
     'lbl_wet_mix':   {'zh_tw': 'Wet Mix',   'en': 'Wet Mix',   'ja': 'Wet Mix',   'ko': 'Wet Mix'},
     'lbl_pre_delay': {'zh_tw': 'Pre-delay', 'en': 'Pre-delay', 'ja': 'Pre-delay', 'ko': 'Pre-delay'},
     'lbl_decay':     {'zh_tw': 'Decay',     'en': 'Decay',     'ja': 'Decay',     'ko': 'Decay'},
@@ -1113,6 +1172,58 @@ BLOCK = 512     # callback block size — increase to 1024 if you hear dropouts
 #  DSP BUILDING BLOCKS
 # ══════════════════════════════════════════════════════════════════════════════
 
+class SpeechAnalysisBuffer:
+    """Small ring buffer for low-rate background speech analysis."""
+
+    def __init__(self, seconds: float = 8.0):
+        self._max_samples = max(1, int(seconds * SR))
+        self._buf = np.zeros(self._max_samples, dtype=np.float32)
+        self._write_pos = 0
+        self._filled = False
+        self._lock = threading.Lock()
+
+    def feed(self, x: np.ndarray):
+        arr = np.asarray(x, dtype=np.float32).reshape(-1)
+        n = len(arr)
+        if n <= 0:
+            return
+        with self._lock:
+            if n >= self._max_samples:
+                self._buf[:] = arr[-self._max_samples:]
+                self._write_pos = 0
+                self._filled = True
+                return
+            end = self._write_pos + n
+            if end <= self._max_samples:
+                self._buf[self._write_pos:end] = arr
+            else:
+                split = self._max_samples - self._write_pos
+                self._buf[self._write_pos:] = arr[:split]
+                self._buf[:end - self._max_samples] = arr[split:]
+                self._filled = True
+            self._write_pos = end % self._max_samples
+
+    def clear(self):
+        with self._lock:
+            self._buf.fill(0.0)
+            self._write_pos = 0
+            self._filled = False
+
+    def snapshot(self, seconds: float = 4.0) -> np.ndarray:
+        n = max(1, int(seconds * SR))
+        with self._lock:
+            available = self._max_samples if self._filled else self._write_pos
+            if available <= 0:
+                return np.zeros(0, dtype=np.float32)
+            n = min(n, available)
+            start = (self._write_pos - n) % self._max_samples
+            if not self._filled:
+                return self._buf[start:self._write_pos].copy()
+            if start < self._write_pos:
+                return self._buf[start:self._write_pos].copy()
+            return np.concatenate([self._buf[start:], self._buf[:self._write_pos]]).copy()
+
+
 class SOSFilter:
     """Single stateful SOS biquad — fast block processing via scipy sosfilt."""
 
@@ -1210,6 +1321,66 @@ class Compressor:
                 env = rel * env + (1.0 - rel) * gain
             y[i] = np.float32(xn * env * makeup)
         self._env = env
+        return y
+
+
+class DownwardExpander:
+    """Block-envelope downward expander for smoother speech cleanup."""
+
+    def __init__(self):
+        self.threshold = -48.0
+        self.ratio     = 2.0
+        self.range     = 18.0
+        self.attack    = 8.0
+        self.release   = 140.0
+        self._env      = 0.0
+        self._gain     = 1.0
+
+    def process(self, x: np.ndarray) -> np.ndarray:
+        if self.ratio <= 1.0 or self.range <= 0.0:
+            return x
+        att = np.exp(-1.0 / max(SR * self.attack / 1000.0, 1.0))
+        rel = np.exp(-1.0 / max(SR * self.release / 1000.0, 1.0))
+        N = len(x)
+        rms = float(np.sqrt(np.mean(x.astype(np.float64) ** 2)))
+        env_coef = (att if rms > self._env else rel) ** N
+        self._env = env_coef * self._env + (1.0 - env_coef) * rms
+        lvl_db = 20.0 * np.log10(max(self._env, 1e-9))
+        if lvl_db < self.threshold:
+            reduction_db = min(self.range, (self.threshold - lvl_db) * (1.0 - 1.0 / self.ratio))
+            target = 10.0 ** (-reduction_db / 20.0)
+        else:
+            target = 1.0
+        coef = att if target < self._gain else rel
+        gain_arr = target + (self._gain - target) * np.power(
+            coef, np.arange(1, N + 1, dtype=np.float64))
+        self._gain = float(gain_arr[-1])
+        return (x * gain_arr).astype(np.float32)
+
+
+class PeakLimiter:
+    """Simple peak limiter that reins in speech spikes."""
+
+    def __init__(self):
+        self.ceiling = -1.2
+        self.release = 120.0
+        self._gain   = 1.0
+
+    def process(self, x: np.ndarray) -> np.ndarray:
+        thr = 10.0 ** (self.ceiling / 20.0)
+        rel = np.exp(-1.0 / max(SR * self.release / 1000.0, 1.0))
+        y = np.empty_like(x, dtype=np.float32)
+        gain = self._gain
+        for i in range(len(x)):
+            xn = float(x[i])
+            abs_x = abs(xn)
+            target = min(1.0, thr / max(abs_x, 1e-9)) if abs_x > thr else 1.0
+            if target < gain:
+                gain = target
+            else:
+                gain = target + (gain - target) * rel
+            y[i] = np.float32(np.clip(xn * gain, -thr, thr))
+        self._gain = gain
         return y
 
 
@@ -1708,6 +1879,43 @@ class Reverb:
 #  PROCESSING CHAINS
 # ══════════════════════════════════════════════════════════════════════════════
 
+class DelayEffect:
+    """Short feedback delay for singing ambience and slapback."""
+
+    def __init__(self):
+        self.time_ms  = 135.0
+        self.feedback = 0.28
+        self.mix      = 0.14
+        self._build()
+
+    def _build(self):
+        delay_n = max(1, int(self.time_ms * SR / 1000.0))
+        self._buf = np.zeros(delay_n, dtype=np.float32)
+        self._pos = 0
+
+    def rebuild(self):
+        self._build()
+
+    def process(self, x: np.ndarray) -> np.ndarray:
+        if self.mix <= 0.0:
+            return x
+        buf = self._buf
+        pos = self._pos
+        fb = float(np.clip(self.feedback, 0.0, 0.95))
+        wet = float(np.clip(self.mix, 0.0, 1.0))
+        dry = 1.0 - wet
+        y = np.empty_like(x, dtype=np.float32)
+        n = len(buf)
+        for i in range(len(x)):
+            delayed = float(buf[pos])
+            inp = float(x[i])
+            buf[pos] = np.float32(np.clip(inp + delayed * fb, -1.0, 1.0))
+            y[i] = np.float32(np.clip(inp * dry + delayed * wet, -1.0, 1.0))
+            pos = (pos + 1) % n
+        self._pos = pos
+        return y
+
+
 class NoiseGate:
     """Noise gate with attack / hold / release envelope.
 
@@ -1758,6 +1966,7 @@ class SpeakingChain:
     """NoiseGate → HP → Low-shelf → Mid peak → High-shelf → DeEsser → Compressor → Gain"""
 
     def __init__(self):
+        self.exp = DownwardExpander()
         self.gate = NoiseGate()
         self.hp  = SOSFilter()
         self.ls  = SOSFilter()
@@ -1765,16 +1974,34 @@ class SpeakingChain:
         self.hs  = SOSFilter()
         self.des = DeEsser()
         self.cmp = Compressor()
+        self.lim = PeakLimiter()
         # Parameter defaults
         self.hp_fc    = 100.0
         self.ls_fc    = 200.0;  self.ls_gain  = -2.0
-        self.mid_fc   = 3000.0; self.mid_gain =  3.0; self.mid_q = 2.0
-        self.hs_fc    = 8000.0; self.hs_gain  =  2.0
-        self.cmp.threshold = -20.0
-        self.cmp.ratio     =  4.0
-        self.cmp.attack    =  5.0
-        self.cmp.release   = 80.0
-        self.cmp.makeup    =  6.0
+        self.mid_fc   = 3200.0; self.mid_gain =  2.5; self.mid_q = 1.7
+        self.hs_fc    = 7600.0; self.hs_gain  =  1.5
+        self.exp.threshold = -48.0
+        self.exp.ratio     =  2.2
+        self.exp.range     = 16.0
+        self.exp.attack    = 10.0
+        self.exp.release   = 170.0
+        self.gate.threshold = -58.0
+        self.gate.attack    = 3.0
+        self.gate.hold      = 70.0
+        self.gate.release   = 130.0
+        self.des.freq      = 6500.0
+        self.des.threshold = -30.0
+        self.des.reduction =  7.0
+        self.des.attack    =  0.8
+        self.des.release   = 90.0
+        self.cmp.threshold = -18.0
+        self.cmp.ratio     =  3.2
+        self.cmp.attack    = 12.0
+        self.cmp.release   = 140.0
+        self.cmp.knee      =  8.0
+        self.cmp.makeup    =  4.0
+        self.lim.ceiling   = -1.2
+        self.lim.release   = 120.0
         self.gain_db = 0.0
         self._rebuild()
 
@@ -1783,8 +2010,10 @@ class SpeakingChain:
         self.ls.lowshelf(self.ls_fc, self.ls_gain)
         self.mid.peaking(self.mid_fc, self.mid_gain, self.mid_q)
         self.hs.highshelf(self.hs_fc, self.hs_gain)
+        self.des._rebuild()
 
     def process(self, x: np.ndarray) -> np.ndarray:
+        x = self.exp.process(x)
         x = self.gate.process(x)
         x = self.hp.process(x)
         x = self.ls.process(x)
@@ -1792,6 +2021,7 @@ class SpeakingChain:
         x = self.hs.process(x)
         x = self.des.process(x)
         x = self.cmp.process(x)
+        x = self.lim.process(x)
         return (x * 10.0 ** (self.gain_db / 20.0)).astype(np.float32)
 
 
@@ -1805,6 +2035,7 @@ class SingingChain:
         self.air = SOSFilter()
         self.des = DeEsser()
         self.cmp = Compressor()
+        self.dly = DelayEffect()
         self.rvb = Reverb()
         # Parameter defaults
         self.hp_fc    = 80.0
@@ -1812,13 +2043,28 @@ class SingingChain:
         self.pr_fc    = 5000.0; self.pr_gain  =  2.5; self.pr_q  = 1.5
         self.air_fc   = 12000.0; self.air_gain =  3.0
         self.des.freq      = 7500.0
-        self.des.threshold = -28.0
-        self.des.reduction =  6.0
-        self.cmp.threshold = -24.0
-        self.cmp.ratio     =  2.0
-        self.cmp.attack    = 20.0
-        self.cmp.release   = 200.0
-        self.cmp.makeup    =  4.0
+        self.des.threshold = -29.0
+        self.des.reduction =  5.0
+        self.des.attack    =  1.2
+        self.des.release   = 100.0
+        self.cmp.threshold = -22.0
+        self.cmp.ratio     =  2.3
+        self.cmp.attack    = 28.0
+        self.cmp.release   = 260.0
+        self.cmp.knee      =  5.0
+        self.cmp.makeup    =  3.0
+        self.dly.time_ms   = 135.0
+        self.dly.feedback  = 0.28
+        self.dly.mix       = 0.14
+        self.dly.rebuild()
+        self.rvb.wet       = 0.18
+        self.rvb.pre_delay = 32
+        self.rvb.decay     = 0.62
+        self.rvb.bandwidth = 0.92
+        self.rvb.damping   = 0.24
+        self.rvb.mod_rate  = 0.45
+        self.rvb.mod_depth = 10.0
+        self.rvb.rebuild()
         self.gain_db = 0.0
         self._rebuild()
 
@@ -1827,6 +2073,7 @@ class SingingChain:
         self.wm.peaking(self.wm_fc, self.wm_gain, self.wm_q)
         self.pr.peaking(self.pr_fc, self.pr_gain, self.pr_q)
         self.air.highshelf(self.air_fc, self.air_gain)
+        self.des._rebuild()
 
     def process(self, x: np.ndarray) -> np.ndarray:
         x = self.hp.process(x)
@@ -1835,6 +2082,7 @@ class SingingChain:
         x = self.air.process(x)
         x = self.des.process(x)
         x = self.cmp.process(x)
+        x = self.dly.process(x)
         x = self.rvb.process(x)
         return (x * 10.0 ** (self.gain_db / 20.0)).astype(np.float32)
 
@@ -2091,6 +2339,7 @@ class AudioEngine:
         self.speak = SpeakingChain()
         self.sing  = SingingChain()
         self.pitch  = PitchShifter()
+        self.analysis = SpeechAnalysisBuffer()
         self.loopback = LoopbackCapture()
         self.soundboard = SoundboardMixer()
         self.stream     = None
@@ -2101,6 +2350,7 @@ class AudioEngine:
 
     def _cb(self, indata, outdata, frames, t, status):
         x = indata[:, 0].copy().astype(np.float32)
+        self.analysis.feed(x)
         # ── DSP chain (mic only) ──────────────────────────────────────────────
         if   self.mode == self.SPEAK: x = self.speak.process(x)
         elif self.mode == self.SING:  x = self.sing.process(x)
@@ -2199,6 +2449,63 @@ RED  = "#f38ba8"
 YEL  = "#f9e2af"
 MUTE = "#45475a"
 
+TALK_PRESETS: dict[str, dict[str, float]] = {
+    "Clean Talk": {
+        "_sp_exp_thr": -50.0, "_sp_exp_rat": 2.0, "_sp_exp_rng": 14.0, "_sp_exp_att": 8.0, "_sp_exp_rel": 160.0,
+        "_sp_gate_thr": -60.0, "_sp_gate_att": 3.0, "_sp_gate_hld": 70.0, "_sp_gate_rel": 120.0,
+        "_sp_hp": 100.0, "_sp_ls_fc": 180.0, "_sp_ls_gain": -1.5, "_sp_mid_fc": 3200.0, "_sp_mid_gain": 2.0, "_sp_mid_q": 1.6,
+        "_sp_hs_fc": 7600.0, "_sp_hs_gain": 1.4, "_sp_des_freq": 6500.0, "_sp_des_thr": -30.0, "_sp_des_red": 6.5,
+        "_sp_des_att": 0.8, "_sp_des_rel": 90.0, "_sp_thr": -18.0, "_sp_rat": 3.0, "_sp_att": 12.0, "_sp_rel": 140.0,
+        "_sp_mkp": 4.0, "_sp_lim_cei": -1.2, "_sp_lim_rel": 120.0, "_sp_gain": 0.0,
+    },
+    "Warm Talk": {
+        "_sp_exp_thr": -49.0, "_sp_exp_rat": 2.3, "_sp_exp_rng": 15.0, "_sp_exp_att": 10.0, "_sp_exp_rel": 180.0,
+        "_sp_gate_thr": -59.0, "_sp_gate_att": 3.5, "_sp_gate_hld": 80.0, "_sp_gate_rel": 135.0,
+        "_sp_hp": 90.0, "_sp_ls_fc": 220.0, "_sp_ls_gain": 1.8, "_sp_mid_fc": 2400.0, "_sp_mid_gain": 1.2, "_sp_mid_q": 1.1,
+        "_sp_hs_fc": 6800.0, "_sp_hs_gain": 0.6, "_sp_des_freq": 6200.0, "_sp_des_thr": -31.0, "_sp_des_red": 5.5,
+        "_sp_des_att": 1.0, "_sp_des_rel": 95.0, "_sp_thr": -19.0, "_sp_rat": 2.8, "_sp_att": 16.0, "_sp_rel": 170.0,
+        "_sp_mkp": 3.5, "_sp_lim_cei": -1.6, "_sp_lim_rel": 150.0, "_sp_gain": 0.0,
+    },
+    "Broadcast": {
+        "_sp_exp_thr": -46.0, "_sp_exp_rat": 2.8, "_sp_exp_rng": 18.0, "_sp_exp_att": 7.0, "_sp_exp_rel": 150.0,
+        "_sp_gate_thr": -57.0, "_sp_gate_att": 2.2, "_sp_gate_hld": 65.0, "_sp_gate_rel": 110.0,
+        "_sp_hp": 110.0, "_sp_ls_fc": 170.0, "_sp_ls_gain": -2.4, "_sp_mid_fc": 3600.0, "_sp_mid_gain": 3.2, "_sp_mid_q": 1.9,
+        "_sp_hs_fc": 8200.0, "_sp_hs_gain": 2.0, "_sp_des_freq": 6800.0, "_sp_des_thr": -29.0, "_sp_des_red": 8.0,
+        "_sp_des_att": 0.6, "_sp_des_rel": 85.0, "_sp_thr": -16.0, "_sp_rat": 3.8, "_sp_att": 8.0, "_sp_rel": 110.0,
+        "_sp_mkp": 5.0, "_sp_lim_cei": -1.0, "_sp_lim_rel": 100.0, "_sp_gain": 0.5,
+    },
+}
+
+SING_PRESETS: dict[str, dict[str, float]] = {
+    "Pop Vocal": {
+        "_sg_hp": 80.0, "_sg_wm_fc": 250.0, "_sg_wm_gain": 2.0, "_sg_wm_q": 1.0,
+        "_sg_pr_fc": 5000.0, "_sg_pr_gain": 2.5, "_sg_pr_q": 1.5, "_sg_air_fc": 12000.0, "_sg_air_gain": 3.0,
+        "_sg_des_freq": 7500.0, "_sg_des_thr": -29.0, "_sg_des_red": 5.0, "_sg_des_att": 1.2, "_sg_des_rel": 100.0,
+        "_sg_thr": -22.0, "_sg_rat": 2.3, "_sg_att": 28.0, "_sg_rel": 260.0, "_sg_mkp": 3.0,
+        "_sg_dly_time": 135.0, "_sg_dly_fb": 0.28, "_sg_dly_mix": 0.14,
+        "_sg_rv_wet": 0.18, "_sg_rv_pre": 32.0, "_sg_rv_decay": 0.62, "_sg_rv_bw": 0.92, "_sg_rv_damp": 0.24,
+        "_sg_rv_mrate": 0.45, "_sg_rv_mdep": 10.0, "_sg_gain": 0.0,
+    },
+    "Ballad": {
+        "_sg_hp": 75.0, "_sg_wm_fc": 230.0, "_sg_wm_gain": 2.8, "_sg_wm_q": 0.9,
+        "_sg_pr_fc": 4200.0, "_sg_pr_gain": 1.8, "_sg_pr_q": 1.3, "_sg_air_fc": 11000.0, "_sg_air_gain": 2.2,
+        "_sg_des_freq": 7000.0, "_sg_des_thr": -31.0, "_sg_des_red": 4.0, "_sg_des_att": 1.4, "_sg_des_rel": 110.0,
+        "_sg_thr": -24.0, "_sg_rat": 2.0, "_sg_att": 36.0, "_sg_rel": 320.0, "_sg_mkp": 2.0,
+        "_sg_dly_time": 190.0, "_sg_dly_fb": 0.22, "_sg_dly_mix": 0.10,
+        "_sg_rv_wet": 0.24, "_sg_rv_pre": 40.0, "_sg_rv_decay": 0.76, "_sg_rv_bw": 0.88, "_sg_rv_damp": 0.30,
+        "_sg_rv_mrate": 0.35, "_sg_rv_mdep": 8.0, "_sg_gain": 0.0,
+    },
+    "Wide Vocal": {
+        "_sg_hp": 85.0, "_sg_wm_fc": 260.0, "_sg_wm_gain": 1.4, "_sg_wm_q": 1.1,
+        "_sg_pr_fc": 5600.0, "_sg_pr_gain": 3.0, "_sg_pr_q": 1.7, "_sg_air_fc": 13000.0, "_sg_air_gain": 3.5,
+        "_sg_des_freq": 7800.0, "_sg_des_thr": -28.0, "_sg_des_red": 5.5, "_sg_des_att": 1.0, "_sg_des_rel": 95.0,
+        "_sg_thr": -21.0, "_sg_rat": 2.5, "_sg_att": 24.0, "_sg_rel": 240.0, "_sg_mkp": 3.5,
+        "_sg_dly_time": 155.0, "_sg_dly_fb": 0.34, "_sg_dly_mix": 0.18,
+        "_sg_rv_wet": 0.22, "_sg_rv_pre": 28.0, "_sg_rv_decay": 0.68, "_sg_rv_bw": 0.95, "_sg_rv_damp": 0.22,
+        "_sg_rv_mrate": 0.65, "_sg_rv_mdep": 12.0, "_sg_gain": 0.5,
+    },
+}
+
 
 class LabeledSlider(tk.Frame):
     """Compact [label ──slider── value] row."""
@@ -2210,6 +2517,7 @@ class LabeledSlider(tk.Frame):
         self.fmt  = fmt
         self.unit = unit
         self._cmd = cmd
+        self._suspend_callback = False
         self.var  = tk.DoubleVar(value=default)
 
         if isinstance(label, tk.StringVar):
@@ -2234,14 +2542,19 @@ class LabeledSlider(tk.Frame):
     def _on_change(self, *_):
         v = self.var.get()
         self._val_lbl.config(text=self._fmtv(v))
-        if self._cmd:
+        if self._cmd and not self._suspend_callback:
             self._cmd(v)
 
     def get(self) -> float:
         return self.var.get()
 
-    def set(self, v: float):
-        self.var.set(v)
+    def set(self, v: float, *, trigger: bool = True):
+        prev = self._suspend_callback
+        self._suspend_callback = prev or not trigger
+        try:
+            self.var.set(v)
+        finally:
+            self._suspend_callback = prev
 
 
 class ScrollFrame(tk.Frame):
@@ -2277,7 +2590,8 @@ class MicToolApp(tk.Tk):
         self.title("MicTool  —  Real-time Mic Processor")
         self.configure(bg=BG)
         self.resizable(True, True)
-        self.geometry("560x820")
+        self.geometry("760x880")
+        self.minsize(700, 760)
         self.engine = AudioEngine()
         # i18n live-update registries
         self._i18n_lframes: list = []   # list[tuple[tk.LabelFrame, str]]
@@ -2307,6 +2621,30 @@ class MicToolApp(tk.Tk):
         self._in_cb: ttk.Combobox | None = None
         self._out_cb: ttk.Combobox | None = None
         self._mon_cb: ttk.Combobox | None = None
+        self._live_editor = 'talk'
+        self._live_editor_buttons: dict[str, tk.Button] = {}
+        self._live_editor_frames: dict[str, tk.Widget] = {}
+        self._talk_preset_var: tk.StringVar | None = None
+        self._sing_preset_var: tk.StringVar | None = None
+        self._smart_eq_mode_var: tk.StringVar | None = None
+        self._smart_eq_status_var: tk.StringVar | None = None
+        self._smart_eq_summary_var: tk.StringVar | None = None
+        self._smart_eq_metrics_var: tk.StringVar | None = None
+        self._smart_eq_analyze_btn: tk.Button | None = None
+        self._smart_eq_apply_btn: tk.Button | None = None
+        self._smart_eq_reset_btn: tk.Button | None = None
+        self._smart_eq_internal_update = False
+        self._smart_eq_latest_result: dict | None = None
+        self._smart_eq_candidate_signature: tuple | None = None
+        self._smart_eq_candidate_count = 0
+        self._smart_eq_last_analysis_at = 0.0
+        self._smart_eq_last_apply_at = 0.0
+        self._smart_eq_last_applied_signature: tuple | None = None
+        self._smart_eq_restore_state: dict[str, float] | None = None
+        self._smart_eq_last_applied_state: dict[str, float] | None = None
+        self._smart_eq_manual_pause_until = 0.0
+        self._smart_eq_capture_until = 0.0
+        self._smart_eq_capture_started_at = 0.0
         self._is_quitting = False
         self._hotkeys.start()
         self._apply_styles()
@@ -2315,6 +2653,7 @@ class MicToolApp(tk.Tk):
         self._vu_loop()
         self._hotkey_loop()
         self._soundboard_loop()
+        self._smart_eq_loop()
         self.bind('<Unmap>', self._on_window_unmap)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
@@ -2353,6 +2692,543 @@ class MicToolApp(tk.Tk):
                            bg=BG2, fg=BLUE, bd=1, relief='groove', padx=6, pady=4)
         self._i18n_lframes.append((lf, key))
         return lf
+
+    def _card(self, parent, *, title_key: str | None = None, subtitle_key: str | None = None,
+              accent: str = BLUE, padx: int = 14, pady: tuple[int, int] = (8, 8)) -> tk.Frame:
+        outer = tk.Frame(parent, bg=BG2, highlightthickness=1, highlightbackground=BG3, bd=0)
+        outer.pack(fill='x', padx=padx, pady=pady)
+        tk.Frame(outer, bg=accent, height=3).pack(fill='x')
+        if title_key or subtitle_key:
+            head = tk.Frame(outer, bg=BG2)
+            head.pack(fill='x', padx=12, pady=(10, 4))
+            if title_key:
+                tk.Label(head, textvariable=_mkvar(title_key),
+                         font=("Segoe UI", 11, "bold"), bg=BG2, fg=FG,
+                         anchor='w').pack(fill='x')
+            if subtitle_key:
+                tk.Label(head, textvariable=_mkvar(subtitle_key),
+                         font=("Segoe UI", 9), bg=BG2, fg=SUB,
+                         wraplength=620, justify='left', anchor='w').pack(fill='x', pady=(2, 0))
+        body = tk.Frame(outer, bg=BG2)
+        body.pack(fill='both', expand=True, padx=12, pady=(0, 12))
+        return body
+
+    def _build_page_intro(self, parent, title_key: str, subtitle_key: str, accent: str = BLUE):
+        card = self._card(parent, title_key=title_key, subtitle_key=subtitle_key, accent=accent, padx=0, pady=(0, 10))
+        return card
+
+    def _apply_slider_values(self, mapping: dict[str, float], editor: str | None = None):
+        prev_internal = self._smart_eq_internal_update
+        self._smart_eq_internal_update = True
+        try:
+            for attr, value in mapping.items():
+                slider = getattr(self, attr, None)
+                if isinstance(slider, LabeledSlider):
+                    slider.set(float(value), trigger=False)
+            if editor == 'talk':
+                self._sync_talk_chain()
+            elif editor == 'sing':
+                self._sync_sing_chain()
+        finally:
+            self._smart_eq_internal_update = prev_internal
+
+    def _sync_talk_chain(self):
+        self._sp_exp_chg()
+        self._sp_gate_chg()
+        self._sp_hp_chg()
+        self._sp_ls_chg()
+        self._sp_mid_chg()
+        self._sp_hs_chg()
+        self._sp_des_chg()
+        self._sp_cmp_chg()
+        self._sp_lim_chg()
+        self.engine.speak.gain_db = self._sp_gain.get()
+
+    def _sync_sing_chain(self):
+        self._sg_hp_chg()
+        self._sg_wm_chg()
+        self._sg_pr_chg()
+        self._sg_air_chg()
+        self._sg_des_chg()
+        self._sg_cmp_chg()
+        self._sg_dly_mix_chg()
+        self._sg_dly_time_chg()
+        self._sg_rv_simple_chg()
+        self._sg_rv_mod_chg()
+        self._sg_rv_rebuild_chg()
+        self.engine.sing.gain_db = self._sg_gain.get()
+
+    def _smart_eq_mode(self) -> str:
+        return self._smart_eq_mode_var.get() if self._smart_eq_mode_var else 'Analyze'
+
+    def _capture_talk_eq_state(self) -> dict[str, float]:
+        attrs = (
+            '_sp_hp',
+            '_sp_ls_fc', '_sp_ls_gain',
+            '_sp_mid_fc', '_sp_mid_gain', '_sp_mid_q',
+            '_sp_hs_fc', '_sp_hs_gain',
+            '_sp_thr', '_sp_mkp',
+            '_sp_lim_cei', '_sp_lim_rel',
+        )
+        state: dict[str, float] = {}
+        for attr in attrs:
+            slider = getattr(self, attr, None)
+            if isinstance(slider, LabeledSlider):
+                state[attr] = float(slider.get())
+        return state
+
+    @staticmethod
+    def _talk_eq_states_match(a: dict[str, float] | None, b: dict[str, float] | None, tol: float = 1e-3) -> bool:
+        if not a or not b or set(a) != set(b):
+            return False
+        return all(abs(float(a[key]) - float(b[key])) <= tol for key in a)
+
+    def _clear_smart_eq_compare_state(self):
+        self._smart_eq_restore_state = None
+        self._smart_eq_last_applied_state = None
+        self._smart_eq_last_applied_signature = None
+
+    def _restore_smart_eq_baseline(self, *, force: bool = False):
+        restore_state = self._smart_eq_restore_state
+        applied_state = self._smart_eq_last_applied_state
+        current_state = self._capture_talk_eq_state()
+        should_restore = force or self._talk_eq_states_match(current_state, applied_state)
+        self._clear_smart_eq_compare_state()
+        if restore_state and should_restore:
+            self._apply_slider_values(restore_state, editor='talk')
+            self._refresh_smart_eq_ui(t('smart_eq_status_restored'), SUB)
+            self._status(t('smart_eq_status_restored'), SUB)
+
+    @staticmethod
+    def _smart_eq_signature(profile: dict) -> tuple:
+        mud_level = 'off' if profile['mud_gain'] > -0.25 else ('mild' if profile['mud_gain'] > -3.0 else 'deep')
+        air_level = 'off' if profile['air_gain'] < 0.25 else ('soft' if profile['air_gain'] < 2.2 else 'open')
+        comp_level = 'light' if profile['comp_threshold'] >= -19.0 else ('medium' if profile['comp_threshold'] >= -22.0 else 'firm')
+        lim_level = 'tight' if profile['lim_release'] <= 100.0 else ('balanced' if profile['lim_release'] <= 140.0 else 'long')
+        return (
+            int(profile['hpf']),
+            int(profile['mud_fc']),
+            mud_level,
+            profile['presence_gain'] >= 1.5,
+            air_level,
+            comp_level,
+            round(profile['comp_makeup'], 1),
+            round(profile['lim_ceiling'], 1),
+            lim_level,
+        )
+
+    def _smart_eq_profile_to_mapping(self, profile: dict[str, float]) -> dict[str, float]:
+        return {
+            '_sp_hp': profile['hpf'],
+            '_sp_ls_fc': profile['mud_fc'],
+            '_sp_ls_gain': profile['mud_gain'],
+            '_sp_mid_fc': 3200.0,
+            '_sp_mid_gain': profile['presence_gain'],
+            '_sp_mid_q': 1.05,
+            '_sp_hs_fc': 6800.0,
+            '_sp_hs_gain': profile['air_gain'],
+            '_sp_thr': profile['comp_threshold'],
+            '_sp_mkp': profile['comp_makeup'],
+            '_sp_lim_cei': profile['lim_ceiling'],
+            '_sp_lim_rel': profile['lim_release'],
+        }
+
+    def _current_talk_eq_signature(self) -> tuple | None:
+        needed = ('_sp_hp', '_sp_ls_fc', '_sp_ls_gain', '_sp_mid_gain', '_sp_hs_gain', '_sp_thr', '_sp_mkp', '_sp_lim_cei', '_sp_lim_rel')
+        if not all(hasattr(self, attr) for attr in needed):
+            return None
+        profile = {
+            'hpf': 100.0 if self._sp_hp.get() >= 85.0 else 70.0,
+            'mud_fc': 380.0 if abs(self._sp_ls_fc.get() - 380.0) < abs(self._sp_ls_fc.get() - 320.0) else 320.0,
+            'mud_gain': -4.5 if self._sp_ls_gain.get() <= -3.0 else (-2.0 if self._sp_ls_gain.get() <= -0.75 else 0.0),
+            'presence_gain': 3.5 if self._sp_mid_gain.get() >= 1.5 else 0.0,
+            'air_gain': 0.0 if self._sp_hs_gain.get() < 0.25 else (1.6 if self._sp_hs_gain.get() < 2.2 else 3.0),
+            'comp_threshold': -24.0 if self._sp_thr.get() <= -22.0 else (-20.0 if self._sp_thr.get() <= -18.0 else -16.0),
+            'comp_makeup': 6.0 if self._sp_mkp.get() >= 5.0 else (4.5 if self._sp_mkp.get() >= 3.5 else 3.0),
+            'lim_ceiling': -1.8 if self._sp_lim_cei.get() <= -1.6 else (-1.4 if self._sp_lim_cei.get() <= -1.2 else -1.0),
+            'lim_release': 90.0 if self._sp_lim_rel.get() <= 100.0 else (120.0 if self._sp_lim_rel.get() <= 140.0 else 170.0),
+        }
+        return self._smart_eq_signature(profile)
+
+    def _smart_eq_summary(self, profile: dict) -> str:
+        mud_text = f"{int(profile['mud_fc'])} Hz Flat" if profile['mud_gain'] > -0.25 else f"{int(profile['mud_fc'])} Hz Cut {profile['mud_gain']:.1f} dB"
+        presence_text = "3.2 kHz On" if profile['presence_gain'] >= 1.5 else "3.2 kHz Off"
+        air_text = "Air Off" if profile['air_gain'] < 0.25 else ("Air Soft" if profile['air_gain'] < 2.2 else "Air Open")
+        return (
+            f"HPF {int(profile['hpf'])} Hz | {mud_text} | {presence_text} | {air_text}\n"
+            f"CMP {profile['comp_threshold']:.0f} dB / +{profile['comp_makeup']:.1f} dB | "
+            f"LIM {profile['lim_ceiling']:.1f} dB / {profile['lim_release']:.0f} ms"
+        )
+
+    def _smart_eq_metrics(self, result: dict) -> str:
+        return (
+            f"{t('smart_eq_metrics_prefix')}: "
+            f"voice {result['voice_seconds']:.1f}s | "
+            f"RMS {result['rms_db']:.1f} dB | "
+            f"peak {result['peak_db']:.1f} dB | "
+            f"crest {result['crest_db']:.1f} dB | "
+            f"mud {result['mud_ratio']:.2f}x"
+        )
+
+    def _refresh_smart_eq_ui(self, status_text: str | None = None, status_color: str = SUB):
+        if self._smart_eq_status_var is not None and status_text is not None:
+            self._smart_eq_status_var.set(status_text)
+        if hasattr(self, '_smart_eq_status_lbl'):
+            self._smart_eq_status_lbl.config(fg=status_color)
+        if self._smart_eq_summary_var is not None and not self._smart_eq_summary_var.get():
+            self._smart_eq_summary_var.set(t('smart_eq_summary_none'))
+        current_sig = self._current_talk_eq_signature()
+        latest_sig = self._smart_eq_latest_result['signature'] if self._smart_eq_latest_result else None
+        if getattr(self, '_smart_eq_apply_btn', None) is not None:
+            self._smart_eq_apply_btn.config(state='normal' if latest_sig is not None and latest_sig != current_sig else 'disabled')
+        if getattr(self, '_smart_eq_reset_btn', None) is not None:
+            self._smart_eq_reset_btn.config(state='normal' if self._smart_eq_restore_state is not None else 'disabled')
+        if getattr(self, '_smart_eq_analyze_btn', None) is not None:
+            busy = bool(getattr(self, '_smart_eq_capture_until', 0.0))
+            self._smart_eq_analyze_btn.config(state='disabled' if busy else 'normal')
+
+    def _build_smart_eq_panel(self, parent: tk.Frame):
+        s = self._section(parent, 'sec_smart_eq')
+        s.pack(fill='x', pady=(0, 6))
+
+        tk.Label(s, textvariable=_mkvar('smart_eq_intro'),
+                 font=("Segoe UI", 9), bg=BG2, fg=FG,
+                 justify='left', anchor='w', wraplength=560).pack(fill='x', padx=4, pady=(2, 8))
+
+        self._smart_eq_mode_var = tk.StringVar(value='Analyze')
+        self._smart_eq_capture_until = 0.0
+        self._smart_eq_capture_started_at = 0.0
+
+        top = tk.Frame(s, bg=BG2)
+        top.pack(fill='x', padx=4)
+        self._smart_eq_analyze_btn = tk.Button(
+            top, text=t('smart_eq_analyze'),
+            font=("Segoe UI", 8, "bold"), bg=BLUE, fg=BG, activebackground=BLUE,
+            bd=0, padx=10, pady=4,
+            command=self._start_smart_eq_analysis,
+        )
+        self._smart_eq_analyze_btn.pack(side='left', padx=(0, 6))
+        self._i18n_buttons.append((self._smart_eq_analyze_btn, 'smart_eq_analyze'))
+        self._smart_eq_apply_btn = tk.Button(
+            top, text=t('smart_eq_apply'),
+            font=("Segoe UI", 8, "bold"), bg=GRN, fg=BG, activebackground=GRN,
+            bd=0, padx=10, pady=4, state='disabled',
+            command=self._apply_smart_eq_latest,
+        )
+        self._smart_eq_apply_btn.pack(side='left', padx=(0, 6))
+        self._i18n_buttons.append((self._smart_eq_apply_btn, 'smart_eq_apply'))
+        self._smart_eq_reset_btn = tk.Button(
+            top, text=t('smart_eq_reset'),
+            font=("Segoe UI", 8), bg=BG3, fg=FG, activebackground=BG3,
+            bd=0, padx=10, pady=4, state='disabled',
+            command=self._reset_smart_eq_setup,
+        )
+        self._smart_eq_reset_btn.pack(side='left', padx=(0, 8))
+        self._i18n_buttons.append((self._smart_eq_reset_btn, 'smart_eq_reset'))
+        self._smart_eq_status_var = tk.StringVar(value=t('smart_eq_status_idle'))
+        self._smart_eq_status_lbl = tk.Label(
+            top, textvariable=self._smart_eq_status_var,
+            font=("Segoe UI", 8, "bold"), bg=BG3, fg=MUTE,
+            padx=10, pady=4, anchor='w',
+        )
+        self._smart_eq_status_lbl.pack(side='left')
+        self._smart_eq_summary_var = tk.StringVar(value=t('smart_eq_summary_none'))
+        self._smart_eq_metrics_var = tk.StringVar(value="")
+        tk.Label(s, textvariable=self._smart_eq_summary_var,
+                 font=("Segoe UI", 9), bg=BG2, fg=FG,
+                 justify='left', anchor='w', wraplength=560).pack(fill='x', padx=4, pady=(8, 2))
+        tk.Label(s, textvariable=self._smart_eq_metrics_var,
+                 font=("Consolas", 8), bg=BG2, fg=SUB,
+                 justify='left', anchor='w', wraplength=560).pack(fill='x', padx=4, pady=(0, 2))
+        self._refresh_smart_eq_ui()
+
+    def _apply_smart_eq_latest(self):
+        if self._smart_eq_latest_result:
+            self._apply_smart_eq_profile(self._smart_eq_latest_result['profile'], source='manual')
+
+    def _start_smart_eq_analysis(self):
+        if not self.engine.running:
+            self._refresh_smart_eq_ui(t('smart_eq_status_wait_output'), MUTE)
+            return
+        if self.engine.mode != AudioEngine.SPEAK:
+            self._refresh_smart_eq_ui(t('smart_eq_status_wait_talk'), MUTE)
+            return
+        self.engine.analysis.clear()
+        self._smart_eq_latest_result = None
+        self._smart_eq_capture_started_at = time.monotonic()
+        self._smart_eq_capture_until = self._smart_eq_capture_started_at + 4.0
+        if self._smart_eq_summary_var is not None:
+            self._smart_eq_summary_var.set(t('smart_eq_summary_none'))
+        if self._smart_eq_metrics_var is not None:
+            self._smart_eq_metrics_var.set("")
+        self._refresh_smart_eq_ui(tf('smart_eq_status_recording', seconds=4), BLUE)
+
+    def _finish_smart_eq_analysis(self):
+        self._smart_eq_capture_until = 0.0
+        self._refresh_smart_eq_ui(t('smart_eq_status_analyzing'), BLUE)
+        result = self._analyze_talk_snapshot(self.engine.analysis.snapshot(4.2))
+        if not result.get('ready'):
+            self._smart_eq_latest_result = None
+            if self._smart_eq_summary_var is not None:
+                self._smart_eq_summary_var.set(t('smart_eq_summary_none'))
+            if self._smart_eq_metrics_var is not None:
+                self._smart_eq_metrics_var.set("")
+            self._refresh_smart_eq_ui(t('smart_eq_status_need_voice'), YEL)
+            return
+        self._smart_eq_latest_result = result
+        if self._smart_eq_summary_var is not None:
+            self._smart_eq_summary_var.set(self._smart_eq_summary(result['profile']))
+        if self._smart_eq_metrics_var is not None:
+            self._smart_eq_metrics_var.set(self._smart_eq_metrics(result))
+        self._refresh_smart_eq_ui(t('smart_eq_status_ready'), GRN)
+
+    def _reset_smart_eq_setup(self):
+        self._restore_smart_eq_baseline(force=True)
+        self._smart_eq_latest_result = None
+        if self._smart_eq_summary_var is not None:
+            self._smart_eq_summary_var.set(t('smart_eq_summary_none'))
+        if self._smart_eq_metrics_var is not None:
+            self._smart_eq_metrics_var.set("")
+        self._refresh_smart_eq_ui(t('smart_eq_status_idle'), MUTE)
+
+    def _apply_smart_eq_profile(self, profile: dict, *, source: str):
+        mapping = self._smart_eq_profile_to_mapping(profile)
+        if self._smart_eq_restore_state is None:
+            self._smart_eq_restore_state = self._capture_talk_eq_state()
+        self._smart_eq_internal_update = True
+        try:
+            self._apply_slider_values(mapping, editor='talk')
+        finally:
+            self._smart_eq_internal_update = False
+        self._smart_eq_last_apply_at = time.monotonic()
+        self._smart_eq_last_applied_state = {key: float(value) for key, value in mapping.items()}
+        self._smart_eq_last_applied_signature = self._smart_eq_signature(profile)
+        self._refresh_smart_eq_ui(t('smart_eq_status_applied'), GRN if source == 'manual' else BLUE)
+        self._status(t('smart_eq_status_applied'), GRN if source == 'manual' else BLUE)
+
+    def _note_talk_eq_manual_change(self):
+        if self._smart_eq_internal_update:
+            return
+        self._refresh_smart_eq_ui()
+
+    def _analyze_talk_snapshot(self, audio: np.ndarray) -> dict:
+        if len(audio) < int(1.2 * SR):
+            return {'ready': False, 'reason': 'need_voice'}
+
+        frame = 1024
+        hop = 512
+        voiced_mask = np.zeros(len(audio), dtype=bool)
+        voiced_rms_db: list[float] = []
+        for start in range(0, len(audio) - frame + 1, hop):
+            seg = audio[start:start + frame]
+            rms = float(np.sqrt(np.mean(seg.astype(np.float64) ** 2)) + 1e-9)
+            peak = float(np.max(np.abs(seg)))
+            rms_db = 20.0 * np.log10(rms)
+            if rms_db > -42.0 and peak > 0.015:
+                voiced_mask[start:start + frame] = True
+                voiced_rms_db.append(rms_db)
+
+        if not np.any(voiced_mask):
+            return {'ready': False, 'reason': 'need_voice'}
+
+        voiced = audio[voiced_mask].astype(np.float32)
+        voice_seconds = len(voiced) / float(SR)
+        if voice_seconds < 1.2:
+            return {'ready': False, 'reason': 'need_voice'}
+
+        rms = float(np.sqrt(np.mean(voiced.astype(np.float64) ** 2)) + 1e-9)
+        peak = float(np.max(np.abs(voiced)) + 1e-9)
+        rms_db = 20.0 * np.log10(rms)
+        peak_db = 20.0 * np.log10(peak)
+        crest_db = peak_db - rms_db
+        spread_db = 0.0
+        if voiced_rms_db:
+            spread_db = float(np.percentile(voiced_rms_db, 90) - np.percentile(voiced_rms_db, 25))
+
+        voiced = voiced - float(np.mean(voiced))
+        nperseg = min(2048, len(voiced))
+        if nperseg < 256:
+            return {'ready': False, 'reason': 'need_voice'}
+        freqs, psd = sci_signal.welch(
+            voiced,
+            fs=SR,
+            nperseg=nperseg,
+            noverlap=nperseg // 2,
+            scaling='spectrum',
+        )
+
+        def band(lo: float, hi: float) -> float:
+            mask = (freqs >= lo) & (freqs < hi)
+            if not np.any(mask):
+                return 0.0
+            return float(np.sum(psd[mask]))
+
+        sub_low = band(40.0, 90.0)
+        low = band(90.0, 180.0)
+        mud = band(220.0, 450.0)
+        mud_low = band(220.0, 330.0)
+        mud_high = band(330.0, 450.0)
+        body = band(700.0, 1500.0) + 1e-9
+        presence = band(2000.0, 4000.0)
+        sibilance = band(5500.0, 9000.0)
+        air = band(10000.0, 14000.0)
+
+        mud_ratio = mud / body
+        presence_ratio = presence / body
+        sibilance_ratio = sibilance / body
+        air_ratio = air / body
+
+        hpf = 100.0 if sub_low > body * 0.20 and sub_low > low * 0.48 else 70.0
+        mud_fc = 380.0 if mud_high > mud_low * 1.08 else 320.0
+        if mud_ratio > 1.05:
+            mud_gain = -4.5
+        elif mud_ratio > 0.82:
+            mud_gain = -2.0
+        else:
+            mud_gain = 0.0
+
+        if sibilance_ratio > 1.45 or presence_ratio > 1.10:
+            presence_gain = 0.0
+        elif presence_ratio < 0.90 and sibilance_ratio < 1.30:
+            presence_gain = 3.5
+        else:
+            presence_gain = 0.0
+
+        if sibilance_ratio > 1.55 or air_ratio > 0.82:
+            air_gain = 0.0
+            presence_gain = 0.0
+        elif air_ratio < 0.26 and sibilance_ratio < 1.05:
+            air_gain = 3.0
+        else:
+            air_gain = 1.6
+
+        if rms_db < -24.0:
+            comp_threshold = -24.0
+            comp_makeup = 6.0
+        elif spread_db > 8.0 or crest_db > 16.0:
+            comp_threshold = -20.0
+            comp_makeup = 4.5
+        else:
+            comp_threshold = -17.0
+            comp_makeup = 3.0
+
+        if peak_db > -4.5:
+            lim_ceiling = -1.8
+        elif peak_db > -7.0:
+            lim_ceiling = -1.4
+        else:
+            lim_ceiling = -1.0
+
+        if crest_db > 18.0 or spread_db > 8.5:
+            lim_release = 90.0
+        elif crest_db > 14.0 or spread_db > 6.0:
+            lim_release = 120.0
+        else:
+            lim_release = 170.0
+
+        profile = {
+            'hpf': hpf,
+            'mud_fc': mud_fc,
+            'mud_gain': mud_gain,
+            'presence_gain': presence_gain,
+            'air_gain': air_gain,
+            'comp_threshold': comp_threshold,
+            'comp_makeup': comp_makeup,
+            'lim_ceiling': lim_ceiling,
+            'lim_release': lim_release,
+        }
+        return {
+            'ready': True,
+            'reason': 'ok',
+            'profile': profile,
+            'signature': self._smart_eq_signature(profile),
+            'voice_seconds': voice_seconds,
+            'mud_ratio': mud_ratio,
+            'presence_ratio': presence_ratio,
+            'sibilance_ratio': sibilance_ratio,
+            'rms_db': rms_db,
+            'peak_db': peak_db,
+            'crest_db': crest_db,
+        }
+
+    def _smart_eq_loop(self):
+        if self._is_quitting:
+            return
+        if getattr(self, '_smart_eq_capture_until', 0.0):
+            now = time.monotonic()
+            if now >= self._smart_eq_capture_until:
+                self._finish_smart_eq_analysis()
+            else:
+                remain = max(1, int(np.ceil(self._smart_eq_capture_until - now)))
+                self._refresh_smart_eq_ui(tf('smart_eq_status_recording', seconds=remain), BLUE)
+        self.after(200, self._smart_eq_loop)
+
+    def _apply_chain_preset(self, editor: str):
+        if editor == 'talk':
+            name = self._talk_preset_var.get() if self._talk_preset_var else ''
+            preset = TALK_PRESETS.get(name)
+        else:
+            name = self._sing_preset_var.get() if self._sing_preset_var else ''
+            preset = SING_PRESETS.get(name)
+        if preset:
+            if editor == 'talk':
+                self._clear_smart_eq_compare_state()
+            self._apply_slider_values(preset, editor=editor)
+            self._status(f"{name} {t('preset_apply')}", BLUE)
+
+    def _reset_chain_preset(self, editor: str):
+        defaults = TALK_PRESETS if editor == 'talk' else SING_PRESETS
+        if defaults:
+            if editor == 'talk':
+                self._clear_smart_eq_compare_state()
+            self._apply_slider_values(next(iter(defaults.values())), editor=editor)
+            self._status(t('preset_reset'), SUB)
+
+    def _build_preset_bar(self, parent, *, editor: str):
+        presets = TALK_PRESETS if editor == 'talk' else SING_PRESETS
+        default_name = next(iter(presets))
+        row = tk.Frame(parent, bg=BG2)
+        row.pack(fill='x', pady=(0, 10))
+        tk.Label(row, textvariable=_mkvar('preset_bar_title'),
+                 font=("Segoe UI", 9, "bold"), bg=BG2, fg=BLUE,
+                 width=8, anchor='w').pack(side='left')
+        preset_var = tk.StringVar(value=default_name)
+        if editor == 'talk':
+            self._talk_preset_var = preset_var
+        else:
+            self._sing_preset_var = preset_var
+        cb = ttk.Combobox(row, textvariable=preset_var, values=list(presets.keys()),
+                          state='readonly', width=26)
+        cb.pack(side='left', padx=(0, 8))
+        btn_apply = tk.Button(row, text=t('preset_apply'),
+                              font=("Segoe UI", 8, "bold"), bg=BLUE, fg=BG,
+                              activebackground=BLUE, bd=0, padx=10, pady=4,
+                              command=lambda e=editor: self._apply_chain_preset(e))
+        btn_apply.pack(side='left', padx=(0, 4))
+        self._i18n_buttons.append((btn_apply, 'preset_apply'))
+        btn_reset = tk.Button(row, text=t('preset_reset'),
+                              font=("Segoe UI", 8), bg=BG3, fg=FG,
+                              activebackground=BG3, bd=0, padx=10, pady=4,
+                              command=lambda e=editor: self._reset_chain_preset(e))
+        btn_reset.pack(side='left')
+        self._i18n_buttons.append((btn_reset, 'preset_reset'))
+
+    def _set_live_editor(self, editor: str):
+        self._live_editor = editor
+        for key, frame in self._live_editor_frames.items():
+            if key == editor:
+                frame.pack(fill='both', expand=True)
+            else:
+                frame.pack_forget()
+        self._refresh_live_editor_buttons()
+
+    def _refresh_live_editor_buttons(self):
+        accents = {'talk': BLUE, 'sing': YEL}
+        for editor, btn in self._live_editor_buttons.items():
+            if editor == self._live_editor:
+                btn.config(bg=accents[editor], fg=BG, relief='sunken')
+            else:
+                btn.config(bg=BG3, fg=accents[editor], relief='flat')
 
     def _apply_lang_live(self):
         """Update all registered UI elements to the current language instantly."""
@@ -2407,31 +3283,64 @@ class MicToolApp(tk.Tk):
         s.map('TCombobox',           fieldbackground=[('readonly', BG3)],
                                      foreground=[('readonly', FG)])
         s.configure('TNotebook',     background=BG,  bordercolor=MUTE, tabmargins=0)
-        s.configure('TNotebook.Tab', background=BG3, foreground=SUB,
-                    padding=[14, 6], font=('Segoe UI', 10, 'bold'))
-        s.map('TNotebook.Tab',       background=[('selected', BG2)],
+        s.configure('TNotebook.Tab', background=BG2, foreground=SUB,
+                    padding=[18, 8], font=('Segoe UI', 10, 'bold'))
+        s.map('TNotebook.Tab',       background=[('selected', BG3)],
                                      foreground=[('selected', FG)])
 
     # ── Top-level layout ──────────────────────────────────────────────────────
 
     def _build_ui(self):
-        self._build_header()
-        self._build_transport()
-        self._build_vu()
-        self._build_mode_bar()
-        tk.Frame(self, bg=MUTE, height=1).pack(fill='x', pady=(4, 0))
+        shell = tk.Frame(self, bg=BG)
+        shell.pack(fill='both', expand=True)
 
-        nb = ttk.Notebook(self)
+        self._build_header(shell)
+        self._build_global_console(shell)
+        tk.Frame(shell, bg=MUTE, height=1).pack(fill='x', padx=14, pady=(0, 4))
+
+        nb = ttk.Notebook(shell)
         nb.pack(fill='both', expand=True, padx=0, pady=0)
         self._nb = nb
 
-        speak_outer = tk.Frame(nb, bg=BG)
-        sing_outer  = tk.Frame(nb, bg=BG)
+        live_outer = tk.Frame(nb, bg=BG)
         voice_outer = tk.Frame(nb, bg=BG)
         soundboard_outer = tk.Frame(nb, bg=BG)
         hotkey_outer = tk.Frame(nb, bg=BG)
-        help_outer  = tk.Frame(nb, bg=BG)
-        about_outer = tk.Frame(nb, bg=BG)
+        settings_outer = tk.Frame(nb, bg=BG)
+        nb.add(live_outer, text=f"  Mix  {t('tab_live')}  ")
+        nb.add(voice_outer, text=f"  Morph  {t('tab_voice')}  ")
+        nb.add(soundboard_outer, text=f"  FX  {t('tab_soundboard')}  ")
+        nb.add(hotkey_outer, text=f"  Keys  {t('tab_hotkeys')}  ")
+        nb.add(settings_outer, text=f"  Sys  {t('tab_settings')}  ")
+        self._nb_tab_info = [
+            (live_outer, 'Mix', 'tab_live'),
+            (voice_outer, 'Morph', 'tab_voice'),
+            (soundboard_outer, 'FX', 'tab_soundboard'),
+            (hotkey_outer, 'Keys', 'tab_hotkeys'),
+            (settings_outer, 'Sys', 'tab_settings'),
+        ]
+
+        self._build_live_panel(live_outer)
+
+        voice_scroll = ScrollFrame(voice_outer)
+        self._build_page_intro(voice_scroll, 'voice_page_title', 'voice_page_subtitle', accent=BLUE)
+        self._build_voice_panel(voice_scroll)
+
+        soundboard_scroll = ScrollFrame(soundboard_outer)
+        self._build_soundboard_panel(soundboard_scroll)
+
+        hotkey_scroll = ScrollFrame(hotkey_outer)
+        self._build_hotkeys_panel(hotkey_scroll)
+
+        settings_scroll = ScrollFrame(settings_outer)
+        self._build_settings_panel(settings_scroll)
+        return
+
+        live_outer = tk.Frame(nb, bg=BG)
+        voice_outer = tk.Frame(nb, bg=BG)
+        soundboard_outer = tk.Frame(nb, bg=BG)
+        hotkey_outer = tk.Frame(nb, bg=BG)
+        settings_outer = tk.Frame(nb, bg=BG)
         nb.add(speak_outer, text=f"  🎤  {t('tab_speaking')}  ")
         nb.add(sing_outer,  text=f"  🎵  {t('tab_singing')}  ")
         nb.add(voice_outer, text=f"  🎙  {t('tab_voice')}  ")
@@ -2470,8 +3379,88 @@ class MicToolApp(tk.Tk):
         about_scroll = ScrollFrame(about_outer)
         self._build_about_panel(about_scroll)
 
-    def _build_header(self):
-        f = tk.Frame(self, bg=BG)
+    def _build_header(self, parent):
+        f = tk.Frame(parent, bg=BG)
+        f.pack(fill='x', padx=14, pady=(12, 6))
+        left = tk.Frame(f, bg=BG)
+        left.pack(side='left', fill='x', expand=True)
+        tk.Label(left, text="MicTool", font=("Segoe UI", 18, "bold"),
+                 bg=BG, fg=BLUE).pack(side='left')
+        tk.Label(left, textvariable=_mkvar('hdr_tagline'),
+                 font=("Segoe UI", 10), bg=BG, fg=SUB).pack(side='left', padx=(10, 0))
+        tk.Button(f, text="??", font=("Segoe UI", 11),
+                  bg=BG, fg=SUB, activebackground=BG3,
+                  bd=0, padx=4, pady=0, cursor='hand2',
+                  command=self._open_lang_dialog).pack(side='right')
+        return
+
+    def _build_global_console(self, parent):
+        body = self._card(parent, accent=BLUE, padx=14, pady=(0, 8))
+        self._build_routing_panel(body)
+        self._build_vu(body)
+        self._build_mode_bar(body)
+
+    def _build_live_panel(self, parent):
+        shell = tk.Frame(parent, bg=BG, padx=14, pady=12)
+        shell.pack(fill='both', expand=True)
+        intro = self._card(shell, title_key='live_console_title', subtitle_key='live_console_subtitle',
+                           accent=BLUE, padx=0, pady=(0, 10))
+        switch = tk.Frame(intro, bg=BG2)
+        switch.pack(fill='x', pady=(2, 0))
+        for editor, key, accent in (('talk', 'live_editor_talk', BLUE), ('sing', 'live_editor_sing', YEL)):
+            btn = tk.Button(switch, text=t(key), font=("Segoe UI", 10, "bold"),
+                            bg=BG3, fg=accent, activebackground=BG3,
+                            bd=0, padx=16, pady=7,
+                            command=lambda e=editor: self._set_live_editor(e))
+            btn.pack(side='left', padx=(0, 6))
+            self._live_editor_buttons[editor] = btn
+            self._i18n_buttons.append((btn, key))
+        tk.Label(intro, textvariable=_mkvar('live_editor_hint'),
+                 font=("Segoe UI", 8), bg=BG2, fg=MUTE,
+                 wraplength=620, justify='left', anchor='w').pack(fill='x', pady=(8, 0))
+
+        editor_host = tk.Frame(shell, bg=BG)
+        editor_host.pack(fill='both', expand=True)
+        talk_frame = tk.Frame(editor_host, bg=BG)
+        sing_frame = tk.Frame(editor_host, bg=BG)
+        self._live_editor_frames = {'talk': talk_frame, 'sing': sing_frame}
+
+        talk_card = self._card(talk_frame, title_key='live_editor_talk', accent=BLUE, padx=0, pady=(0, 0))
+        self._build_preset_bar(talk_card, editor='talk')
+        talk_scroll = ScrollFrame(talk_card)
+        self._build_speak_panel(talk_scroll)
+
+        sing_card = self._card(sing_frame, title_key='live_editor_sing', accent=YEL, padx=0, pady=(0, 0))
+        self._build_preset_bar(sing_card, editor='sing')
+        sing_scroll = ScrollFrame(sing_card)
+        self._build_sing_panel(sing_scroll)
+
+        self._set_live_editor('talk')
+
+    def _build_settings_panel(self, parent):
+        shell = tk.Frame(parent, bg=BG, padx=14, pady=12)
+        shell.pack(fill='x')
+        self._build_page_intro(shell, 'settings_title', 'settings_subtitle', accent=YEL)
+
+        interface_card = self._card(shell, title_key='settings_interface_title',
+                                    subtitle_key='settings_interface_body', accent=BLUE, padx=0, pady=(0, 10))
+        btn_lang = tk.Button(interface_card, text=t('settings_language_btn'),
+                             font=("Segoe UI", 9, "bold"), bg=BLUE, fg=BG,
+                             activebackground=BLUE, bd=0, padx=14, pady=6,
+                             command=self._open_lang_dialog)
+        btn_lang.pack(anchor='w')
+        self._i18n_buttons.append((btn_lang, 'settings_language_btn'))
+
+        loop_card = self._card(shell, title_key='settings_loopback_title', accent=GRN, padx=0, pady=(0, 10))
+        self._build_loopback_panel(loop_card)
+
+        help_card = self._card(shell, title_key='settings_help_title', accent=YEL, padx=0, pady=(0, 10))
+        self._build_help_panel(help_card)
+
+        about_card = self._card(shell, title_key='settings_about_title', accent=BLUE, padx=0, pady=(0, 0))
+        self._build_about_panel(about_card)
+        return
+        f = tk.Frame(parent, bg=BG2)
         f.pack(fill='x', padx=14, pady=(10, 4))
         tk.Label(f, text="MicTool", font=("Segoe UI", 15, "bold"),
                  bg=BG, fg=BLUE).pack(side='left')
@@ -2611,6 +3600,130 @@ class MicToolApp(tk.Tk):
                 new_mon = self._match_device_choice(cur_mon, out_names, "Off")
             self._set_device_vars(in_dev=new_in, out_dev=new_out, mon_dev=new_mon)
 
+    def _build_routing_panel(self, parent):
+        f = tk.Frame(parent, bg=BG2)
+        f.pack(fill='x')
+
+        in_names, out_names = self._enumerate_device_names()
+        self._in_names = in_names
+        self._out_names = out_names
+
+        row1 = tk.Frame(f, bg=BG2); row1.pack(fill='x', pady=2)
+        tk.Label(row1, textvariable=_mkvar('lbl_input'), font=("Segoe UI", 9),
+                 bg=BG2, fg=SUB, width=7, anchor='w').pack(side='left')
+        self.in_var = tk.StringVar(value=self._default_device_str(in_names, True))
+        self._in_cb = ttk.Combobox(row1, textvariable=self.in_var, values=in_names,
+                                   state='readonly', width=48)
+        self._in_cb.pack(side='left', fill='x', expand=True)
+        self.in_var.trace_add('write', self._on_dev_change)
+
+        row2 = tk.Frame(f, bg=BG2); row2.pack(fill='x', pady=2)
+        tk.Label(row2, textvariable=_mkvar('lbl_output'), font=("Segoe UI", 9),
+                 bg=BG2, fg=SUB, width=7, anchor='w').pack(side='left')
+        self.out_var = tk.StringVar(value=self._default_device_str(out_names, False))
+        self._out_cb = ttk.Combobox(row2, textvariable=self.out_var, values=out_names,
+                                    state='readonly', width=48)
+        self._out_cb.pack(side='left', fill='x', expand=True)
+        self.out_var.trace_add('write', self._on_dev_change)
+
+        mon_names = ["Off"] + out_names
+        row_mon = tk.Frame(f, bg=BG2); row_mon.pack(fill='x', pady=2)
+        tk.Label(row_mon, textvariable=_mkvar('lbl_monitor'), font=("Segoe UI", 9),
+                 bg=BG2, fg=SUB, width=7, anchor='w').pack(side='left')
+        self.mon_var = tk.StringVar(value="Off")
+        self._mon_cb = ttk.Combobox(row_mon, textvariable=self.mon_var, values=mon_names,
+                                    state='readonly', width=48)
+        self._mon_cb.pack(side='left', fill='x', expand=True)
+        self.mon_var.trace_add('write', self._on_dev_change)
+
+        row_mvol = tk.Frame(f, bg=BG2); row_mvol.pack(fill='x', pady=(2, 4))
+        tk.Label(row_mvol, text="", bg=BG2, fg=SUB, width=7).pack(side='left')
+        tk.Label(row_mvol, textvariable=_mkvar('lbl_monitor_vol'), font=("Segoe UI", 9),
+                 bg=BG2, fg=SUB).pack(side='left')
+        self._mon_vol_var = tk.DoubleVar(value=80.0)
+        self._mon_vol_var.trace_add('write', self._mon_vol_chg)
+        ttk.Scale(row_mvol, from_=0, to=400, variable=self._mon_vol_var,
+                  orient='horizontal', length=220).pack(side='left', padx=(6, 6))
+        self._mon_vol_lbl = tk.Label(row_mvol, text=" 80 %",
+                                     font=("Consolas", 9), bg=BG2, fg=BLUE, width=7)
+        self._mon_vol_lbl.pack(side='left')
+
+        vb_found = any('cable input' in n.lower() or 'vb-audio' in n.lower()
+                       for n in out_names)
+        if vb_found:
+            vb_key, vb_color, vb_tip_key = 'vb_ok', GRN, 'vb_tip_ready'
+        else:
+            vb_key, vb_color, vb_tip_key = 'vb_missing', YEL, 'vb_tip_missing'
+        self._vb_lbl_var = tk.StringVar(value=t(vb_key))
+        _I18N_VARS.append((self._vb_lbl_var, vb_key))
+        self._vb_lbl = tk.Label(row2, textvariable=self._vb_lbl_var,
+                                font=("Segoe UI", 8), bg=BG2, fg=vb_color)
+        self._vb_lbl.pack(side='left', padx=6)
+        self._vb_lbl.bind("<Button-1>", lambda e: messagebox.showinfo(
+            t('vb_route_title'),
+            tf('vb_route_steps', tip=t(vb_tip_key))))
+
+        row3 = tk.Frame(f, bg=BG2); row3.pack(fill='x', pady=(8, 2))
+        self._btn_start = tk.Button(row3, text=t('btn_start'),
+                                    font=("Segoe UI", 9, "bold"),
+                                    bg=GRN, fg=BG, activebackground=GRN,
+                                    bd=0, padx=12, pady=5,
+                                    command=self._start)
+        self._btn_start.pack(side='left', padx=(0, 6))
+        self._i18n_buttons.append((self._btn_start, 'btn_start'))
+
+        self._btn_stop = tk.Button(row3, text=t('btn_stop'),
+                                   font=("Segoe UI", 9, "bold"),
+                                   bg=RED, fg=BG, activebackground=RED,
+                                   bd=0, padx=12, pady=5,
+                                   command=self._stop, state='disabled')
+        self._btn_stop.pack(side='left', padx=(0, 14))
+        self._i18n_buttons.append((self._btn_stop, 'btn_stop'))
+
+        btn_save = tk.Button(row3, text=t('btn_save'),
+                             font=("Segoe UI", 9), bg=BG3, fg=BLUE, activebackground=BG3,
+                             bd=0, padx=10, pady=4, command=self._save_settings)
+        btn_save.pack(side='left', padx=(0, 4))
+        self._i18n_buttons.append((btn_save, 'btn_save'))
+
+        btn_load = tk.Button(row3, text=t('btn_load'),
+                             font=("Segoe UI", 9), bg=BG3, fg=BLUE, activebackground=BG3,
+                             bd=0, padx=10, pady=4, command=self._load_settings)
+        btn_load.pack(side='left', padx=(0, 10))
+        self._i18n_buttons.append((btn_load, 'btn_load'))
+        self._status_lbl = tk.Label(row3, text="", font=("Segoe UI", 8), bg=BG2, fg=SUB)
+        self._status_lbl.pack(side='left')
+
+    def _build_loopback_panel(self, parent):
+        f = tk.Frame(parent, bg=BG2)
+        f.pack(fill='x')
+
+        self._lb_sources: list[tuple[str, object, str]] = []
+        row_lb = tk.Frame(f, bg=BG2); row_lb.pack(fill='x', pady=2)
+        tk.Label(row_lb, textvariable=_mkvar('lbl_source'), font=("Segoe UI", 9),
+                 bg=BG2, fg=SUB, width=7, anchor='w').pack(side='left')
+        self._lb_var = tk.StringVar(value="Off")
+        self._lb_cb = ttk.Combobox(row_lb, textvariable=self._lb_var,
+                                   values=["Off"], state='readonly', width=48)
+        self._lb_cb.pack(side='left', fill='x', expand=True)
+        self._lb_var.trace_add('write', self._on_lb_change)
+        tk.Button(row_lb, text="↺", font=("Segoe UI", 9),
+                  bg=BG3, fg=FG, bd=0, padx=6, pady=3,
+                  command=self._refresh_lb_sources).pack(side='left', padx=(6, 0))
+
+        row_lbg = tk.Frame(f, bg=BG2); row_lbg.pack(fill='x', pady=(4, 0))
+        tk.Label(row_lbg, text="", bg=BG2, fg=SUB, width=7).pack(side='left')
+        tk.Label(row_lbg, textvariable=_mkvar('lbl_app_vol'), font=("Segoe UI", 9),
+                 bg=BG2, fg=SUB).pack(side='left')
+        self._lb_gain_var = tk.DoubleVar(value=80.0)
+        self._lb_gain_var.trace_add('write', self._on_lb_gain)
+        ttk.Scale(row_lbg, from_=0, to=200, variable=self._lb_gain_var,
+                  orient='horizontal', length=220).pack(side='left', padx=(6, 6))
+        self._lb_gain_lbl = tk.Label(row_lbg, text=" 80 %",
+                                     font=("Consolas", 9), bg=BG2, fg=BLUE, width=7)
+        self._lb_gain_lbl.pack(side='left')
+        self._refresh_lb_sources()
+
     def _build_transport(self):
         f = tk.Frame(self, bg=BG)
         f.pack(fill='x', padx=14, pady=4)
@@ -2651,7 +3764,7 @@ class MicToolApp(tk.Tk):
         row_mvol = tk.Frame(f, bg=BG); row_mvol.pack(fill='x', pady=(0, 2))
         tk.Label(row_mvol, text="", bg=BG, fg=SUB, width=7).pack(side='left')
         tk.Label(row_mvol, textvariable=_mkvar('lbl_monitor_vol'), font=("Segoe UI", 9),
-                 bg=BG, fg=SUB).pack(side='left')
+                 bg=BG2, fg=SUB).pack(side='left')
         self._mon_vol_var = tk.DoubleVar(value=80.0)
         self._mon_vol_var.trace_add('write', self._mon_vol_chg)
         ttk.Scale(row_mvol, from_=0, to=400, variable=self._mon_vol_var,
@@ -2750,9 +3863,9 @@ class MicToolApp(tk.Tk):
                                     bg=BG, fg=SUB)
         self._status_lbl.pack(side='left')
 
-    def _build_vu(self):
-        f = tk.Frame(self, bg=BG)
-        f.pack(fill='x', padx=14, pady=(2, 4))
+    def _build_vu(self, parent):
+        f = tk.Frame(parent, bg=BG2)
+        f.pack(fill='x', pady=(2, 4))
         tk.Label(f, textvariable=_mkvar('lbl_level'), font=("Segoe UI", 9),
                  bg=BG, fg=SUB).pack(side='left')
         self._vu = tk.Canvas(f, width=320, height=14, bg=BG3,
@@ -2761,14 +3874,14 @@ class MicToolApp(tk.Tk):
         self._vu_bar = self._vu.create_rectangle(0, 0, 0, 14,
                                                   fill=GRN, outline='')
         self._vu_lbl = tk.Label(f, text="  -∞ dB",
-                                 font=("Consolas", 9), bg=BG, fg=SUB, width=10)
+                                 font=("Consolas", 9), bg=BG2, fg=SUB, width=10)
         self._vu_lbl.pack(side='left')
 
-    def _build_mode_bar(self):
+    def _build_mode_bar(self, parent):
         f = tk.Frame(self, bg=BG)
         f.pack(pady=6)
         tk.Label(f, textvariable=_mkvar('lbl_mode'), font=("Segoe UI", 10, "bold"),
-                 bg=BG, fg=FG).pack(side='left', padx=(0, 10))
+                 bg=BG2, fg=FG).pack(side='left', padx=(0, 10))
         specs = [
             (AudioEngine.BYPASS, 'btn_bypass',   MUTE),
             (AudioEngine.SPEAK,  'btn_speaking',  BLUE),
@@ -2953,6 +4066,27 @@ class MicToolApp(tk.Tk):
         p  = tk.Frame(parent, bg=BG, padx=10, pady=4)
         p.pack(fill='x')
 
+        self._build_smart_eq_panel(p)
+
+        # Expander
+        s = self._section(p, 'sec_expander'); s.pack(fill='x', pady=3)
+        e = sp.exp
+        self._sp_exp_thr = LabeledSlider(s, _mkvar('lbl_threshold'), -80, 0, e.threshold,
+                                         "{:.1f}", " dB", self._sp_exp_chg)
+        self._sp_exp_thr.pack(fill='x')
+        self._sp_exp_rat = LabeledSlider(s, _mkvar('lbl_ratio'), 1, 8, e.ratio,
+                                         "{:.1f}", ":1", self._sp_exp_chg)
+        self._sp_exp_rat.pack(fill='x')
+        self._sp_exp_rng = LabeledSlider(s, _mkvar('lbl_range'), 0, 36, e.range,
+                                         "{:.1f}", " dB", self._sp_exp_chg)
+        self._sp_exp_rng.pack(fill='x')
+        self._sp_exp_att = LabeledSlider(s, _mkvar('lbl_attack'), 0.1, 50, e.attack,
+                                         "{:.1f}", " ms", self._sp_exp_chg)
+        self._sp_exp_att.pack(fill='x')
+        self._sp_exp_rel = LabeledSlider(s, _mkvar('lbl_release'), 10, 500, e.release,
+                                         "{:.0f}", " ms", self._sp_exp_chg)
+        self._sp_exp_rel.pack(fill='x')
+
         # Noise Gate
         s = self._section(p, 'sec_noise_gate'); s.pack(fill='x', pady=3)
         g = sp.gate
@@ -3042,6 +4176,16 @@ class MicToolApp(tk.Tk):
         self._sp_mkp = LabeledSlider(s, _mkvar('lbl_makeup'),   -6,  24, c.makeup,
                                      "{:.1f}", " dB", self._sp_cmp_chg)
         self._sp_mkp.pack(fill='x')
+
+        # Limiter
+        s = self._section(p, 'sec_limiter'); s.pack(fill='x', pady=3)
+        l = sp.lim
+        self._sp_lim_cei = LabeledSlider(s, _mkvar('lbl_ceiling'), -12, 0, l.ceiling,
+                                         "{:.1f}", " dB", self._sp_lim_chg)
+        self._sp_lim_cei.pack(fill='x')
+        self._sp_lim_rel = LabeledSlider(s, _mkvar('lbl_release'), 10, 500, l.release,
+                                         "{:.0f}", " ms", self._sp_lim_chg)
+        self._sp_lim_rel.pack(fill='x')
 
         # Output Gain
         s = self._section(p, 'sec_output_gain'); s.pack(fill='x', pady=3)
@@ -3133,6 +4277,19 @@ class MicToolApp(tk.Tk):
         self._sg_mkp = LabeledSlider(s, _mkvar('lbl_makeup'),    -6,  24, c.makeup,
                                      "{:.1f}", " dB", self._sg_cmp_chg)
         self._sg_mkp.pack(fill='x')
+
+        # Delay
+        s = self._section(p, 'sec_delay'); s.pack(fill='x', pady=3)
+        dly = sg.dly
+        self._sg_dly_time = LabeledSlider(s, _mkvar('lbl_time'), 40, 450, dly.time_ms,
+                                          "{:.0f}", " ms", self._sg_dly_time_chg)
+        self._sg_dly_time.pack(fill='x')
+        self._sg_dly_fb   = LabeledSlider(s, _mkvar('lbl_feedback'), 0, 0.9, dly.feedback,
+                                          "{:.2f}", "", self._sg_dly_mix_chg)
+        self._sg_dly_fb.pack(fill='x')
+        self._sg_dly_mix  = LabeledSlider(s, _mkvar('lbl_wet_mix'), 0, 0.6, dly.mix,
+                                          "{:.2f}", "", self._sg_dly_mix_chg)
+        self._sg_dly_mix.pack(fill='x')
 
         # Reverb  (Dattorro plate)
         s = self._section(p, 'sec_reverb'); s.pack(fill='x', pady=3)
@@ -3664,6 +4821,14 @@ class MicToolApp(tk.Tk):
 
     # ── Parameter callbacks — Speaking ────────────────────────────────────────
 
+    def _sp_exp_chg(self, _=None):
+        e = self.engine.speak.exp
+        e.threshold = self._sp_exp_thr.get()
+        e.ratio     = self._sp_exp_rat.get()
+        e.range     = self._sp_exp_rng.get()
+        e.attack    = self._sp_exp_att.get()
+        e.release   = self._sp_exp_rel.get()
+
     def _sp_gate_chg(self, _=None):
         g = self.engine.speak.gate
         g.threshold = self._sp_gate_thr.get()
@@ -3672,17 +4837,20 @@ class MicToolApp(tk.Tk):
         g.release   = self._sp_gate_rel.get()
 
     def _sp_hp_chg(self, _=None):
+        self._note_talk_eq_manual_change()
         sp = self.engine.speak
         sp.hp_fc = self._sp_hp.get()
         sp.hp.highpass(sp.hp_fc)
 
     def _sp_ls_chg(self, _=None):
+        self._note_talk_eq_manual_change()
         sp = self.engine.speak
         sp.ls_fc   = self._sp_ls_fc.get()
         sp.ls_gain = self._sp_ls_gain.get()
         sp.ls.lowshelf(sp.ls_fc, sp.ls_gain)
 
     def _sp_mid_chg(self, _=None):
+        self._note_talk_eq_manual_change()
         sp = self.engine.speak
         sp.mid_fc   = self._sp_mid_fc.get()
         sp.mid_gain = self._sp_mid_gain.get()
@@ -3690,18 +4858,26 @@ class MicToolApp(tk.Tk):
         sp.mid.peaking(sp.mid_fc, sp.mid_gain, sp.mid_q)
 
     def _sp_hs_chg(self, _=None):
+        self._note_talk_eq_manual_change()
         sp = self.engine.speak
         sp.hs_fc   = self._sp_hs_fc.get()
         sp.hs_gain = self._sp_hs_gain.get()
         sp.hs.highshelf(sp.hs_fc, sp.hs_gain)
 
     def _sp_cmp_chg(self, _=None):
+        self._note_talk_eq_manual_change()
         c = self.engine.speak.cmp
         c.threshold = self._sp_thr.get()
         c.ratio     = self._sp_rat.get()
         c.attack    = self._sp_att.get()
         c.release   = self._sp_rel.get()
         c.makeup    = self._sp_mkp.get()
+
+    def _sp_lim_chg(self, _=None):
+        self._note_talk_eq_manual_change()
+        l = self.engine.speak.lim
+        l.ceiling = self._sp_lim_cei.get()
+        l.release = self._sp_lim_rel.get()
 
     def _sp_des_chg(self, _=None):
         d = self.engine.speak.des
@@ -3755,6 +4931,16 @@ class MicToolApp(tk.Tk):
         d.attack    = self._sg_des_att.get()
         d.release   = self._sg_des_rel.get()
         d._rebuild()
+
+    def _sg_dly_time_chg(self, _=None):
+        dly = self.engine.sing.dly
+        dly.time_ms = self._sg_dly_time.get()
+        dly.rebuild()
+
+    def _sg_dly_mix_chg(self, _=None):
+        dly = self.engine.sing.dly
+        dly.feedback = self._sg_dly_fb.get()
+        dly.mix      = self._sg_dly_mix.get()
 
     def _sg_rv_simple_chg(self, _=None):
         """Update params that take effect immediately (no buffer rebuild needed)."""
@@ -3932,6 +5118,10 @@ class MicToolApp(tk.Tk):
 
     def _set_mode(self, mode: int):
         self.engine.mode = mode
+        if mode == AudioEngine.SPEAK:
+            self._set_live_editor('talk')
+        elif mode == AudioEngine.SING:
+            self._set_live_editor('sing')
         self._refresh_mode_btns()
 
     def _refresh_mode_btns(self):
@@ -4011,6 +5201,8 @@ class MicToolApp(tk.Tk):
             pass
 
     def _apply_settings(self, data: dict):
+        self._clear_smart_eq_compare_state()
+        self._smart_eq_latest_result = None
         running_selection = self._active_device_selection.copy() if self._active_device_selection else None
         device_selection = self._resolve_device_selection({
             "in_dev": data.get("in_dev", self.in_var.get()),
@@ -4041,13 +5233,23 @@ class MicToolApp(tk.Tk):
             if action_id in self._hotkey_vars:
                 self._set_hotkey_binding(action_id, combo)
         # Sliders — setting each var fires the trace → updates the engine
-        for name, val in data.get("sliders", {}).items():
-            obj = getattr(self, name, None)
-            if isinstance(obj, LabeledSlider):
-                try:
-                    obj.set(float(val))
-                except Exception:
-                    pass
+        prev_internal = self._smart_eq_internal_update
+        self._smart_eq_internal_update = True
+        try:
+            for name, val in data.get("sliders", {}).items():
+                obj = getattr(self, name, None)
+                if isinstance(obj, LabeledSlider):
+                    try:
+                        obj.set(float(val))
+                    except Exception:
+                        pass
+        finally:
+            self._smart_eq_internal_update = prev_internal
+        if self._smart_eq_summary_var is not None:
+            self._smart_eq_summary_var.set(t('smart_eq_summary_none'))
+        if self._smart_eq_metrics_var is not None:
+            self._smart_eq_metrics_var.set("")
+        self._refresh_smart_eq_ui(t('smart_eq_status_idle'), MUTE)
         if self.engine.running and running_selection != device_selection:
             self._start_selection(device_selection, sync_ui=True)
 
