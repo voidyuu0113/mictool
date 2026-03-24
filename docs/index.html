@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MicTool | Windows 即時聲音控制台</title>
-  <meta name="description" content="MicTool 是為 Windows 設計的即時聲音控制台，整合 Talk、Sing、Voice、Soundboard、Hotkeys 與 App Loopback，快速接進 OBS 與直播流程。">
+  <meta name="description" content="MicTool 是為 Windows 設計的即時聲音控制台，整合 Talk、Sing、Voice、Soundboard、Hotkeys 與 App Loopback，快速接進 OBS 與日常語音流程。">
   <meta name="keywords" content="MicTool, Windows 麥克風工具, OBS 聲音路由, 即時變聲, Soundboard, Hotkeys, App Loopback">
   <meta name="robots" content="index,follow">
-  <meta name="theme-color" content="#10141f">
+  <meta name="theme-color" content="#0d111a">
   <link rel="canonical" href="https://voidyuu0113.github.io/mictool/">
   <link rel="icon" href="./favicon.ico" sizes="any">
   <meta property="og:type" content="website">
@@ -21,25 +21,24 @@
   <meta name="twitter:image" content="https://voidyuu0113.github.io/mictool/assets/hero-mic.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #f2efe8;
-      --bg-soft: #faf8f3;
-      --panel: rgba(255, 255, 255, 0.82);
+      --bg: #f6f4ee;
+      --bg-2: #ece9e1;
+      --ink: #0d111a;
+      --muted: #616877;
+      --line: rgba(13, 17, 26, 0.09);
+      --panel: rgba(255, 255, 255, 0.78);
       --panel-solid: #ffffff;
-      --panel-strong: #10141f;
-      --line: rgba(16, 20, 31, 0.09);
-      --line-strong: rgba(16, 20, 31, 0.18);
-      --text: #10141f;
-      --muted: #5a6273;
       --accent: #0f766e;
-      --accent-2: #d97706;
-      --shadow: 0 22px 48px rgba(16, 20, 31, 0.08);
-      --radius-xl: 28px;
-      --radius-lg: 22px;
-      --radius-md: 16px;
-      --max: 1180px;
+      --accent-2: #ef8f2f;
+      --accent-3: #111827;
+      --shadow: 0 24px 56px rgba(13, 17, 26, 0.08);
+      --radius-xl: 30px;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --max: 1160px;
     }
 
     * {
@@ -53,12 +52,12 @@
     body {
       margin: 0;
       font-family: "Noto Sans TC", sans-serif;
-      color: var(--text);
+      color: var(--ink);
       background:
-        radial-gradient(circle at top left, rgba(15, 118, 110, 0.08), transparent 32%),
-        radial-gradient(circle at top right, rgba(217, 119, 6, 0.08), transparent 28%),
-        linear-gradient(180deg, #f6f4ef 0%, #f2efe8 100%);
-      line-height: 1.6;
+        radial-gradient(circle at 14% 0%, rgba(15, 118, 110, 0.08), transparent 22%),
+        radial-gradient(circle at 100% 10%, rgba(239, 143, 47, 0.08), transparent 20%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+      line-height: 1.55;
     }
 
     body::before {
@@ -67,10 +66,10 @@
       inset: 0;
       pointer-events: none;
       background-image:
-        linear-gradient(rgba(16, 20, 31, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(16, 20, 31, 0.02) 1px, transparent 1px);
-      background-size: 48px 48px;
-      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.28), transparent 78%);
+        linear-gradient(rgba(13, 17, 26, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(13, 17, 26, 0.02) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.24), transparent 78%);
       z-index: -1;
     }
 
@@ -85,25 +84,25 @@
     }
 
     .shell {
-      width: min(var(--max), calc(100% - 32px));
+      width: min(var(--max), calc(100% - 28px));
       margin: 0 auto;
     }
 
     .site-header {
       position: sticky;
       top: 0;
-      z-index: 30;
-      backdrop-filter: blur(14px);
-      background: rgba(242, 239, 232, 0.76);
-      border-bottom: 1px solid rgba(16, 20, 31, 0.06);
+      z-index: 20;
+      border-bottom: 1px solid rgba(13, 17, 26, 0.05);
+      background: rgba(246, 244, 238, 0.76);
+      backdrop-filter: blur(16px);
     }
 
     .nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 20px;
-      min-height: 76px;
+      gap: 18px;
+      min-height: 74px;
     }
 
     .brand {
@@ -111,60 +110,25 @@
       align-items: center;
       gap: 12px;
       font-family: "Manrope", sans-serif;
+      font-size: 1.08rem;
       font-weight: 800;
       letter-spacing: -0.03em;
-      font-size: 1.08rem;
     }
 
     .brand-mark {
       width: 42px;
       height: 42px;
-      border-radius: 14px;
       display: grid;
       place-items: center;
+      border-radius: 14px;
       color: #fff;
-      background: linear-gradient(135deg, #0f766e, #115e59 65%, #10141f);
-      box-shadow: 0 14px 24px rgba(15, 118, 110, 0.22);
+      background: linear-gradient(135deg, #0f766e, #115e59 58%, #111827);
+      box-shadow: 0 14px 24px rgba(15, 118, 110, 0.2);
     }
 
     .brand-mark svg {
       width: 22px;
       height: 22px;
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 26px;
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
-
-    .nav-links a {
-      position: relative;
-      transition: color 180ms ease;
-    }
-
-    .nav-links a::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      bottom: -7px;
-      width: 100%;
-      height: 2px;
-      border-radius: 999px;
-      background: var(--accent);
-      transform: scaleX(0);
-      transform-origin: left;
-      transition: transform 180ms ease;
-    }
-
-    .nav-links a:hover {
-      color: var(--text);
-    }
-
-    .nav-links a:hover::after {
-      transform: scaleX(1);
     }
 
     .nav-actions {
@@ -177,15 +141,13 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
       min-height: 48px;
       padding: 0 18px;
       border-radius: 999px;
       border: 1px solid transparent;
       font-weight: 700;
-      font-size: 0.96rem;
+      font-size: 0.95rem;
       transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
-      cursor: pointer;
     }
 
     .button:hover {
@@ -194,38 +156,38 @@
 
     .button-primary {
       color: #fff;
-      background: linear-gradient(135deg, #10141f, #1c2434);
-      box-shadow: 0 18px 30px rgba(16, 20, 31, 0.18);
+      background: linear-gradient(135deg, #111827, #1c2434);
+      box-shadow: 0 18px 30px rgba(17, 24, 39, 0.16);
     }
 
     .button-secondary {
-      border-color: rgba(16, 20, 31, 0.12);
-      background: rgba(255, 255, 255, 0.74);
-      color: var(--text);
+      color: var(--ink);
+      border-color: rgba(13, 17, 26, 0.1);
+      background: rgba(255, 255, 255, 0.72);
     }
 
     .hero {
-      padding: 54px 0 48px;
+      padding: 42px 0 30px;
     }
 
     .hero-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.02fr) minmax(360px, 0.98fr);
+      grid-template-columns: minmax(0, 0.88fr) minmax(360px, 1.12fr);
       align-items: center;
-      gap: 40px;
+      gap: 32px;
     }
 
     .eyebrow {
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      padding: 8px 14px;
+      padding: 8px 13px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.66);
-      border: 1px solid rgba(16, 20, 31, 0.08);
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(13, 17, 26, 0.08);
       color: var(--muted);
-      font-size: 0.86rem;
-      font-weight: 600;
+      font-size: 0.85rem;
+      font-weight: 700;
     }
 
     .eyebrow::before {
@@ -233,7 +195,7 @@
       width: 8px;
       height: 8px;
       border-radius: 999px;
-      background: linear-gradient(135deg, var(--accent), #2dd4bf);
+      background: linear-gradient(135deg, var(--accent), #39d5c5);
       box-shadow: 0 0 0 6px rgba(15, 118, 110, 0.12);
     }
 
@@ -243,340 +205,381 @@
       margin: 0;
       font-family: "Manrope", "Noto Sans TC", sans-serif;
       letter-spacing: -0.04em;
-      line-height: 1.04;
+      line-height: 1.02;
     }
 
     h1 {
       margin-top: 18px;
-      max-width: 10ch;
-      font-size: clamp(2.45rem, 4.2vw, 4.3rem);
-    }
-
-    .hero-copy {
-      max-width: 560px;
+      max-width: 8ch;
+      font-size: clamp(2.5rem, 4.6vw, 4.5rem);
     }
 
     .hero-copy p {
+      max-width: 27rem;
       margin: 18px 0 0;
-      max-width: 32rem;
       color: var(--muted);
-      font-size: 1.02rem;
+      font-size: 1rem;
     }
 
     .hero-actions {
       display: flex;
       flex-wrap: wrap;
-      align-items: center;
-      gap: 14px;
-      margin-top: 28px;
+      gap: 12px;
+      margin-top: 26px;
     }
 
-    .hero-meta {
+    .hero-note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .hero-stage {
+      position: relative;
+    }
+
+    .product-shot {
+      position: relative;
+      overflow: hidden;
+      padding: 18px;
+      border-radius: 32px;
+      border: 1px solid rgba(13, 17, 26, 0.08);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.64));
+      box-shadow: var(--shadow);
+    }
+
+    .product-window {
+      overflow: hidden;
+      border-radius: 24px;
+      background: linear-gradient(180deg, #111827 0%, #171d2b 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .window-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.76);
+      font-size: 0.88rem;
+    }
+
+    .window-dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .window-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    .window-body {
+      display: grid;
+      grid-template-columns: 188px minmax(0, 1fr);
+      min-height: 430px;
+    }
+
+    .sidebar {
+      padding: 16px;
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(7, 10, 16, 0.22);
+    }
+
+    .menu {
+      display: grid;
+      gap: 10px;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 13px;
+      border-radius: 16px;
+      color: rgba(255, 255, 255, 0.72);
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 0.92rem;
+    }
+
+    .menu-item.active {
+      color: #fff;
+      background: linear-gradient(135deg, rgba(15, 118, 110, 0.26), rgba(255, 255, 255, 0.08));
+      box-shadow: inset 0 0 0 1px rgba(57, 213, 197, 0.16);
+    }
+
+    .menu-item svg {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 18px;
+    }
+
+    .workspace {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+      background:
+        radial-gradient(circle at top right, rgba(15, 118, 110, 0.11), transparent 28%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .toolbar-chip {
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.84rem;
+    }
+
+    .toolbar-chip strong,
+    .metric strong {
+      display: block;
+      margin-bottom: 4px;
+      font-family: "Manrope", sans-serif;
+      font-size: 0.9rem;
+      color: #fff;
+    }
+
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 1.12fr 0.88fr;
+      gap: 14px;
+    }
+
+    .panel {
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.88rem;
+    }
+
+    .panel-head strong {
+      font-family: "Manrope", sans-serif;
+      color: #fff;
+      font-size: 0.96rem;
+    }
+
+    .sliders {
+      display: grid;
+      gap: 12px;
+    }
+
+    .slider {
+      display: grid;
+      gap: 8px;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 0.82rem;
+    }
+
+    .track {
+      height: 10px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #39d5c5, #f6a23f);
+      transform: scaleX(var(--fill, 0.5));
+      transform-origin: left;
+    }
+
+    .metrics {
+      display: grid;
+      gap: 10px;
+    }
+
+    .metric {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 0.84rem;
+    }
+
+    .tag-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px 12px;
-      margin-top: 28px;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid rgba(13, 17, 26, 0.08);
+      box-shadow: 0 10px 20px rgba(13, 17, 26, 0.04);
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .tag svg {
+      width: 18px;
+      height: 18px;
+      color: var(--accent);
+    }
+
+    .proof {
+      padding: 18px 0 26px;
+    }
+
+    .proof-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 16px;
+    }
+
+    .proof-card,
+    .cta {
+      position: relative;
+      overflow: hidden;
+      padding: 22px;
+      border-radius: 26px;
+      border: 1px solid rgba(13, 17, 26, 0.08);
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: var(--shadow);
+    }
+
+    .proof-card h2,
+    .cta h2 {
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+    }
+
+    .proof-card p,
+    .cta p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      max-width: 34rem;
+    }
+
+    .proof-stack {
+      display: grid;
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .proof-line {
+      display: grid;
+      grid-template-columns: 94px minmax(0, 1fr);
+      gap: 14px;
+      align-items: center;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.64);
+      border: 1px solid rgba(13, 17, 26, 0.07);
+    }
+
+    .proof-line strong {
+      font-family: "Manrope", sans-serif;
+      font-size: 0.94rem;
+      letter-spacing: -0.02em;
+    }
+
+    .proof-line span {
       color: var(--muted);
       font-size: 0.92rem;
     }
 
-    .hero-meta span {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 9px 12px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.64);
-      border: 1px solid rgba(16, 20, 31, 0.08);
+    .mini-grid {
+      display: grid;
+      gap: 14px;
+      align-content: stretch;
     }
 
-    .hero-visual {
-      position: relative;
-    }
-
-    .visual-card {
-      position: relative;
-      overflow: hidden;
-      border-radius: 30px;
-      padding: 18px;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.7));
-      border: 1px solid rgba(16, 20, 31, 0.08);
-      box-shadow: var(--shadow);
-    }
-
-    .visual-card img {
-      aspect-ratio: 4 / 3.25;
-      width: 100%;
-      border-radius: 22px;
-      object-fit: cover;
-      object-position: center;
-      transform: translateY(var(--hero-shift, 0px));
-      transition: transform 220ms ease;
-    }
-
-    .visual-panel {
-      position: absolute;
-      right: -14px;
-      bottom: 26px;
-      width: min(230px, 56%);
-      padding: 18px;
+    .mini-card {
+      padding: 20px;
       border-radius: 24px;
-      background: rgba(16, 20, 31, 0.92);
-      color: rgba(255, 255, 255, 0.9);
-      box-shadow: 0 24px 36px rgba(16, 20, 31, 0.24);
+      background: linear-gradient(180deg, rgba(17, 24, 39, 0.96), rgba(23, 29, 43, 0.96));
+      color: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 24px 40px rgba(13, 17, 26, 0.14);
     }
 
-    .visual-panel strong {
+    .mini-card strong {
       display: block;
+      margin-bottom: 10px;
       font-family: "Manrope", sans-serif;
       font-size: 1rem;
-      letter-spacing: -0.02em;
-    }
-
-    .visual-panel p {
-      margin: 8px 0 0;
-      font-size: 0.88rem;
-      line-height: 1.6;
-      color: rgba(255, 255, 255, 0.74);
-    }
-
-    .section {
-      padding: 34px 0;
-    }
-
-    .section-heading {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-width: 620px;
-      margin-bottom: 28px;
-    }
-
-    .section-heading h2 {
-      font-size: clamp(2rem, 3vw, 2.75rem);
-    }
-
-    .section-heading p {
-      margin: 0;
-      color: var(--muted);
-    }
-
-    .grid {
-      display: grid;
-      gap: 18px;
-    }
-
-    .feature-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .card {
-      position: relative;
-      overflow: hidden;
-      padding: 24px;
-      border-radius: var(--radius-lg);
-      background: var(--panel);
-      border: 1px solid rgba(16, 20, 31, 0.08);
-      box-shadow: 0 10px 26px rgba(16, 20, 31, 0.05);
-      backdrop-filter: blur(10px);
-    }
-
-    .card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.34), transparent 65%);
-      pointer-events: none;
-    }
-
-    .icon-wrap {
-      width: 48px;
-      height: 48px;
-      display: inline-grid;
-      place-items: center;
-      margin-bottom: 18px;
-      border-radius: 16px;
       color: #fff;
-      background: linear-gradient(135deg, #0f766e, #115e59 64%, #10141f);
-      box-shadow: 0 14px 26px rgba(15, 118, 110, 0.18);
     }
 
-    .icon-wrap svg {
-      width: 22px;
-      height: 22px;
-    }
-
-    .card h3 {
-      font-size: 1.18rem;
-      letter-spacing: -0.03em;
-    }
-
-    .card p {
-      margin: 10px 0 0;
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
-
-    .workflow {
-      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-      align-items: stretch;
-    }
-
-    .workflow-card {
-      padding: 28px;
-      border-radius: var(--radius-xl);
-      border: 1px solid rgba(16, 20, 31, 0.08);
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.66));
-      box-shadow: var(--shadow);
-    }
-
-    .steps {
-      display: grid;
-      gap: 14px;
-    }
-
-    .step {
-      display: grid;
-      grid-template-columns: 46px minmax(0, 1fr);
-      gap: 16px;
-      align-items: start;
-      padding: 18px;
-      border-radius: 18px;
-      background: rgba(255, 255, 255, 0.72);
-      border: 1px solid rgba(16, 20, 31, 0.08);
-    }
-
-    .step-number {
-      width: 46px;
-      height: 46px;
-      display: grid;
-      place-items: center;
-      border-radius: 14px;
-      background: #10141f;
-      color: #fff;
-      font-family: "Manrope", sans-serif;
-      font-weight: 800;
-    }
-
-    .step h3 {
-      font-size: 1.04rem;
-    }
-
-    .step p {
-      margin: 6px 0 0;
-      color: var(--muted);
-      font-size: 0.94rem;
-    }
-
-    .stack {
-      display: grid;
-      gap: 14px;
-    }
-
-    .mini-panel {
-      display: grid;
-      gap: 10px;
-      padding: 20px;
-      border-radius: 22px;
-      background: #10141f;
-      color: rgba(255, 255, 255, 0.84);
-    }
-
-    .mini-panel strong {
-      font-family: "Manrope", sans-serif;
-      font-size: 1.15rem;
-    }
-
-    .mini-panel p {
+    .mini-card p {
       margin: 0;
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 0.94rem;
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 0.92rem;
     }
 
-    .chip-row {
+    .mini-card .chip-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
+      margin-top: 14px;
     }
 
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
+    .mini-card .chip {
+      padding: 9px 11px;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      font-size: 0.88rem;
+      font-size: 0.82rem;
     }
 
-    .use-case-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .use-case {
-      padding: 24px;
-      border-radius: var(--radius-lg);
-      background: rgba(255, 255, 255, 0.74);
-      border: 1px solid rgba(16, 20, 31, 0.08);
-    }
-
-    .use-case span {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(15, 118, 110, 0.1);
-      color: var(--accent);
-      font-size: 0.8rem;
-      font-weight: 700;
-    }
-
-    .use-case h3 {
-      margin-top: 16px;
-      font-size: 1.18rem;
-    }
-
-    .use-case p {
-      margin: 10px 0 0;
-      color: var(--muted);
-      font-size: 0.95rem;
+    .cta-wrap {
+      padding: 12px 0 40px;
     }
 
     .cta {
-      padding: 28px;
-      border-radius: 32px;
       background:
-        radial-gradient(circle at top right, rgba(217, 119, 6, 0.18), transparent 34%),
-        linear-gradient(135deg, #111827, #182235 72%, #0f172a);
-      color: rgba(255, 255, 255, 0.9);
-      box-shadow: 0 22px 40px rgba(16, 20, 31, 0.18);
-    }
-
-    .cta-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 22px;
-      align-items: center;
-    }
-
-    .cta h2 {
-      font-size: clamp(1.95rem, 3vw, 2.7rem);
+        radial-gradient(circle at top right, rgba(239, 143, 47, 0.18), transparent 28%),
+        linear-gradient(135deg, #10141f, #161e2d 72%, #0f172a);
+      color: rgba(255, 255, 255, 0.88);
     }
 
     .cta p {
-      margin: 10px 0 0;
-      max-width: 36rem;
-      color: rgba(255, 255, 255, 0.7);
+      color: rgba(255, 255, 255, 0.68);
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 22px;
     }
 
     .cta .button-primary {
-      background: linear-gradient(135deg, #ffffff, #dce5f0);
-      color: #10141f;
+      color: var(--ink);
+      background: linear-gradient(135deg, #ffffff, #e8edf6);
       box-shadow: none;
     }
 
-    footer {
-      padding: 26px 0 44px;
+    .footer {
+      padding: 10px 0 36px;
       color: var(--muted);
       font-size: 0.88rem;
     }
@@ -586,7 +589,7 @@
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 12px 18px;
+      gap: 10px 18px;
     }
 
     .footer-links {
@@ -596,7 +599,7 @@
 
     [data-reveal] {
       opacity: 0;
-      transform: translateY(24px);
+      transform: translateY(22px);
       transition: opacity 520ms ease, transform 520ms ease;
     }
 
@@ -605,46 +608,34 @@
       transform: translateY(0);
     }
 
-    @media (max-width: 1040px) {
-      .nav-links {
-        display: none;
-      }
-
+    @media (max-width: 1024px) {
       .hero-grid,
-      .workflow,
-      .cta-grid {
+      .proof-grid,
+      .workspace-grid {
         grid-template-columns: 1fr;
       }
 
-      .feature-grid {
+      .window-body {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        border-right: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .toolbar {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .use-case-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .hero {
-        padding-top: 38px;
-      }
-
-      h1 {
-        max-width: none;
-      }
-
-      .visual-panel {
-        right: 16px;
-        bottom: 16px;
       }
     }
 
     @media (max-width: 720px) {
       .shell {
-        width: min(var(--max), calc(100% - 20px));
+        width: min(var(--max), calc(100% - 18px));
       }
 
       .nav {
-        min-height: 70px;
+        min-height: 68px;
       }
 
       .nav-actions .button-secondary {
@@ -652,46 +643,43 @@
       }
 
       .hero {
-        padding: 28px 0 34px;
+        padding: 28px 0 22px;
       }
 
       h1 {
+        max-width: none;
         font-size: 2.35rem;
       }
 
       .hero-copy p,
-      .section-heading p {
-        font-size: 0.96rem;
-      }
-
-      .feature-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .card,
-      .use-case,
-      .workflow-card,
-      .cta {
-        padding: 22px;
-      }
-
-      .visual-card {
-        padding: 12px;
-      }
-
-      .visual-panel {
-        position: static;
-        width: 100%;
-        margin-top: 12px;
-      }
-
-      .hero-actions {
-        flex-direction: column;
-        align-items: stretch;
+      .proof-card p,
+      .cta p {
+        font-size: 0.95rem;
       }
 
       .button {
         width: 100%;
+      }
+
+      .hero-actions,
+      .cta-row {
+        flex-direction: column;
+      }
+
+      .product-shot,
+      .proof-card,
+      .cta,
+      .mini-card {
+        padding: 18px;
+      }
+
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .proof-line {
+        grid-template-columns: 1fr;
+        gap: 6px;
       }
 
       .footer-row,
@@ -726,7 +714,7 @@
     "name": "MicTool",
     "applicationCategory": "MultimediaApplication",
     "operatingSystem": "Windows",
-    "description": "MicTool 是為 Windows 設計的即時聲音控制台，整合 Talk、Sing、Voice、Soundboard、Hotkeys 與 App Loopback，快速接進 OBS 與直播流程。",
+    "description": "MicTool 是為 Windows 設計的即時聲音控制台，整合 Talk、Sing、Voice、Soundboard、Hotkeys 與 App Loopback，快速接進 OBS 與日常語音流程。",
     "downloadUrl": "https://github.com/voidyuu0113/mictool/releases/latest",
     "softwareVersion": "v0.1.3-no-ai",
     "publisher": {
@@ -750,14 +738,8 @@
         </span>
         <span>MicTool</span>
       </a>
-      <nav class="nav-links" aria-label="主要導覽">
-        <a href="#features">功能</a>
-        <a href="#workflow">流程</a>
-        <a href="#scenes">情境</a>
-        <a href="#download">下載</a>
-      </nav>
       <div class="nav-actions">
-        <a class="button button-secondary" href="https://github.com/voidyuu0113/mictool/blob/codex/no-ai-exe/README.md">閱讀 README</a>
+        <a class="button button-secondary" href="https://github.com/voidyuu0113/mictool/blob/codex/no-ai-exe/README.md">README</a>
         <a class="button button-primary" href="https://github.com/voidyuu0113/mictool/releases/latest">下載</a>
       </div>
     </div>
@@ -768,62 +750,30 @@
       <div class="shell hero-grid">
         <div class="hero-copy" data-reveal>
           <span class="eyebrow">Windows 即時聲音控制台</span>
-          <h1>把聲音流程整理成一個地方</h1>
-          <p>MicTool 把 Talk、Sing、Voice、Soundboard、Hotkeys 與 App Loopback 收進同一套操作介面，讓你更快把聲音整理好，再送進 OBS 或日常語音流程。</p>
+          <h1>把聲音控制集中起來</h1>
+          <p>給直播、語音與歌回使用的 Windows 聲音工作台。</p>
           <div class="hero-actions">
             <a class="button button-primary" href="https://github.com/voidyuu0113/mictool/releases/latest">下載 Windows 版本</a>
             <a class="button button-secondary" href="https://github.com/voidyuu0113/mictool/blob/codex/no-ai-exe/README.md">快速開始</a>
           </div>
-          <div class="hero-meta" aria-label="MicTool 核心資訊">
-            <span>Talk / Sing / Voice</span>
-            <span>Soundboard + Hotkeys</span>
-            <span>OBS / Monitor / Routing</span>
-          </div>
-        </div>
-
-        <div class="hero-visual" data-reveal>
-          <div class="visual-card">
-            <img src="./assets/hero-mic.jpg" alt="麥克風與錄音工作區">
-          </div>
-          <div class="visual-panel">
-            <strong>更像一個聲音工作台</strong>
-            <p>不是一堆分散小工具，而是一個能把麥克風處理、路由與演出控制放在一起的桌面工作流程。</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="features">
-      <div class="shell">
-        <div class="section-heading" data-reveal>
-          <h2>核心功能</h2>
-          <p>把最常用的即時聲音功能放進同一個流程裡，不需要在多套工具間反覆切換。</p>
-        </div>
-        <div class="grid feature-grid">
-          <article class="card" data-reveal>
-            <span class="icon-wrap" aria-hidden="true">
+          <div class="tag-row" aria-label="MicTool 核心功能">
+            <span class="tag">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 13a8 8 0 1 1 16 0"></path>
                 <path d="M12 5v8"></path>
                 <path d="M7 13h10"></path>
               </svg>
+              Talk / Sing
             </span>
-            <h3>Talk / Sing</h3>
-            <p>針對講話與唱歌分開調整，保留即時處理鏈，讓你更快進入可用狀態。</p>
-          </article>
-          <article class="card" data-reveal>
-            <span class="icon-wrap" aria-hidden="true">
+            <span class="tag">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M7 4v16"></path>
                 <path d="M12 7v10"></path>
                 <path d="M17 5v14"></path>
               </svg>
+              Voice
             </span>
-            <h3>Voice</h3>
-            <p>切換不同變聲模式，搭配現有處理鏈與輸出流程，不用額外重建整套設定。</p>
-          </article>
-          <article class="card" data-reveal>
-            <span class="icon-wrap" aria-hidden="true">
+            <span class="tag">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="4" y="4" width="6" height="6" rx="1.5"></rect>
                 <rect x="14" y="4" width="6" height="6" rx="1.5"></rect>
@@ -831,12 +781,9 @@
                 <path d="M17 20v-6"></path>
                 <path d="M14 17h6"></path>
               </svg>
+              Soundboard + Hotkeys
             </span>
-            <h3>Soundboard + Hotkeys</h3>
-            <p>支援多音效匯入、個別音量與全域快捷鍵，背景執行時也能直接觸發。</p>
-          </article>
-          <article class="card" data-reveal>
-            <span class="icon-wrap" aria-hidden="true">
+            <span class="tag">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3.5" y="5" width="17" height="11" rx="2"></rect>
                 <path d="M8 19h8"></path>
@@ -845,115 +792,170 @@
                 <path d="M7.5 12.5h.01"></path>
                 <path d="M10.5 12.5h4.5"></path>
               </svg>
+              App Loopback
             </span>
-            <h3>App Loopback</h3>
-            <p>把指定程式的聲音加入你的輸出鏈，不需要把整個系統聲音都一起丟進去。</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="workflow">
-      <div class="shell">
-        <div class="grid workflow">
-          <div class="workflow-card" data-reveal>
-            <div class="section-heading" style="margin-bottom: 20px;">
-              <h2>使用流程</h2>
-              <p>頁面結構以實際操作順序為主，不用先理解所有參數，先把聲音接起來就能開始。</p>
-            </div>
-            <div class="steps">
-              <article class="step">
-                <div class="step-number">1</div>
-                <div>
-                  <h3>選裝置與模式</h3>
-                  <p>設定 Input、Output、Monitor，然後在 Talk、Sing 或 Voice 之間切換你現在要用的流程。</p>
-                </div>
-              </article>
-              <article class="step">
-                <div class="step-number">2</div>
-                <div>
-                  <h3>補上需要的控制</h3>
-                  <p>如果有伴奏、遊戲或播放器，就把指定程式聲音一起加進來；如果是演出或實況，再配上 Soundboard 和 Hotkeys。</p>
-                </div>
-              </article>
-              <article class="step">
-                <div class="step-number">3</div>
-                <div>
-                  <h3>送進 OBS 或語音軟體</h3>
-                  <p>整理好的輸出可以直接進 OBS、Discord 或其他 Windows 聲音流程，不必再拆成多套工具接線。</p>
-                </div>
-              </article>
-            </div>
-          </div>
-
-          <div class="stack" data-reveal>
-            <aside class="mini-panel">
-              <strong>以工作流程為中心</strong>
-              <p>把人聲處理、模式切換、音效與路由整理成一套更容易理解的桌面操作介面。</p>
-            </aside>
-            <aside class="workflow-card">
-              <div class="section-heading" style="margin-bottom: 16px;">
-                <h2 style="font-size: 1.55rem;">適合的使用方式</h2>
-              </div>
-              <div class="chip-row">
-                <span class="chip">直播人聲整理</span>
-                <span class="chip">OBS 音訊路由</span>
-                <span class="chip">歌回與伴奏</span>
-                <span class="chip">Discord / 遊戲語音</span>
-                <span class="chip">音效板觸發</span>
-                <span class="chip">背景快捷鍵</span>
-              </div>
-            </aside>
           </div>
         </div>
+
+        <div class="hero-stage" data-reveal>
+          <div class="product-shot">
+            <div class="product-window">
+              <div class="window-topbar">
+                <div class="window-dots" aria-hidden="true">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <div>MicTool Control Surface</div>
+              </div>
+              <div class="window-body">
+                <aside class="sidebar">
+                  <div class="menu">
+                    <div class="menu-item active">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 13a8 8 0 1 1 16 0"></path>
+                        <path d="M12 5v8"></path>
+                        <path d="M7 13h10"></path>
+                      </svg>
+                      Live
+                    </div>
+                    <div class="menu-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 4v16"></path>
+                        <path d="M12 7v10"></path>
+                        <path d="M17 5v14"></path>
+                      </svg>
+                      Voice
+                    </div>
+                    <div class="menu-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="4" width="6" height="6" rx="1.5"></rect>
+                        <rect x="14" y="4" width="6" height="6" rx="1.5"></rect>
+                        <rect x="4" y="14" width="6" height="6" rx="1.5"></rect>
+                        <path d="M17 20v-6"></path>
+                        <path d="M14 17h6"></path>
+                      </svg>
+                      Soundboard
+                    </div>
+                    <div class="menu-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 9h16"></path>
+                        <path d="M4 15h10"></path>
+                        <path d="M18 15h2"></path>
+                        <path d="M6 9v10"></path>
+                        <path d="M12 15v4"></path>
+                      </svg>
+                      Hotkeys
+                    </div>
+                  </div>
+                </aside>
+                <div class="workspace">
+                  <div class="toolbar">
+                    <div class="toolbar-chip"><strong>Input</strong>Microphone</div>
+                    <div class="toolbar-chip"><strong>Output</strong>VB-Cable</div>
+                    <div class="toolbar-chip"><strong>Monitor</strong>Headphones</div>
+                    <div class="toolbar-chip"><strong>Mode</strong>Talk</div>
+                  </div>
+                  <div class="workspace-grid">
+                    <section class="panel">
+                      <div class="panel-head">
+                        <strong>Talk Studio</strong>
+                        <span>Ready</span>
+                      </div>
+                      <div class="sliders">
+                        <div class="slider">
+                          <span>Clarity</span>
+                          <div class="track"><div class="fill" style="--fill:0.72;"></div></div>
+                        </div>
+                        <div class="slider">
+                          <span>Compression</span>
+                          <div class="track"><div class="fill" style="--fill:0.58;"></div></div>
+                        </div>
+                        <div class="slider">
+                          <span>Presence</span>
+                          <div class="track"><div class="fill" style="--fill:0.68;"></div></div>
+                        </div>
+                        <div class="slider">
+                          <span>Reverb</span>
+                          <div class="track"><div class="fill" style="--fill:0.26;"></div></div>
+                        </div>
+                      </div>
+                    </section>
+                    <section class="metrics">
+                      <div class="metric">
+                        <strong>Loopback</strong>
+                        Browser / Player
+                      </div>
+                      <div class="metric">
+                        <strong>Hotkeys</strong>
+                        Ctrl+M / Mouse 4
+                      </div>
+                      <div class="metric">
+                        <strong>Soundboard</strong>
+                        12 Pads
+                      </div>
+                      <div class="metric">
+                        <strong>Output Chain</strong>
+                        OBS / Discord Ready
+                      </div>
+                    </section>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="section" id="scenes">
-      <div class="shell">
-        <div class="section-heading" data-reveal>
-          <h2>常見情境</h2>
-          <p>不同使用場景可以直接沿用同一套聲音工作台，不用每次重新拼裝流程。</p>
+    <section class="proof">
+      <div class="shell proof-grid">
+        <div class="proof-card" data-reveal>
+          <h2>一眼看懂主要能力</h2>
+          <div class="proof-stack">
+            <div class="proof-line">
+              <strong>Talk / Sing</strong>
+              <span>分開處理人聲</span>
+            </div>
+            <div class="proof-line">
+              <strong>Voice</strong>
+              <span>切換變聲模式</span>
+            </div>
+            <div class="proof-line">
+              <strong>Loopback</strong>
+              <span>指定程式進同一條輸出鏈</span>
+            </div>
+          </div>
         </div>
-        <div class="grid use-case-grid">
-          <article class="use-case" data-reveal>
-            <span>直播</span>
-            <h3>把麥克風整理後送進 OBS</h3>
-            <p>用 Talk 或 Sing 模式先整理人聲，再決定是否加入程式聲音與音效板，最後送到直播輸出。</p>
-          </article>
-          <article class="use-case" data-reveal>
-            <span>語音</span>
-            <h3>日常通話也能維持固定音色</h3>
-            <p>快捷鍵、Monitor 和裝置切換都在同一套介面裡，開會、聊天或遊戲連麥都比較好維護。</p>
-          </article>
-          <article class="use-case" data-reveal>
-            <span>演出</span>
-            <h3>把操作集中起來比較不容易手忙腳亂</h3>
-            <p>變聲、模式切換、音效觸發與程式音訊整合都集中管理，現場操作更清楚。</p>
-          </article>
+        <div class="mini-grid" data-reveal>
+          <div class="mini-card">
+            <strong>OBS / Discord / Live Ready</strong>
+            <div class="chip-row">
+              <span class="chip">Release</span>
+              <span class="chip">README</span>
+              <span class="chip">VB-Cable</span>
+              <span class="chip">Hotkeys</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="section" id="download">
+    <section class="cta-wrap">
       <div class="shell">
         <div class="cta" data-reveal>
-          <div class="cta-grid">
-            <div>
-              <h2>下載後就能開始接你的聲音流程</h2>
-              <p>Release 內提供 Windows 可執行版本；如果需要更完整的安裝與使用說明，README 也已經整理好。</p>
-            </div>
-            <div class="hero-actions" style="margin-top: 0;">
-              <a class="button button-primary" href="https://github.com/voidyuu0113/mictool/releases/latest">前往 Release</a>
-              <a class="button button-secondary" href="https://github.com/voidyuu0113/mictool/blob/codex/no-ai-exe/README.md">閱讀 README</a>
-            </div>
+          <h2>先下載，再開始接聲音</h2>
+          <p>Windows 版本在 Release。完整說明在 README。</p>
+          <div class="cta-row">
+            <a class="button button-primary" href="https://github.com/voidyuu0113/mictool/releases/latest">前往 Release</a>
+            <a class="button button-secondary" href="https://github.com/voidyuu0113/mictool/blob/codex/no-ai-exe/README.md">查看 README</a>
           </div>
         </div>
       </div>
     </section>
   </main>
 
-  <footer>
+  <footer class="footer">
     <div class="shell footer-row">
       <div>MicTool by 結小語 Voidyuu</div>
       <div class="footer-links">
@@ -972,22 +974,9 @@
           revealObserver.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.18, rootMargin: '0px 0px -30px 0px' });
+    }, { threshold: 0.18, rootMargin: '0px 0px -24px 0px' });
 
     reveals.forEach((node) => revealObserver.observe(node));
-
-    const heroImage = document.querySelector('.visual-card img');
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    if (heroImage && !reducedMotion) {
-      const updateHeroShift = () => {
-        const offset = Math.min(window.scrollY * 0.08, 18);
-        heroImage.style.setProperty('--hero-shift', `${offset}px`);
-      };
-
-      updateHeroShift();
-      window.addEventListener('scroll', updateHeroShift, { passive: true });
-    }
   </script>
 </body>
 </html>
