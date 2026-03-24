@@ -8,13 +8,15 @@
 
 MicTool 是一款給 Windows 使用的即時麥克風音訊處理工具，適合直播、OBS、Discord、聊天台、歌回與日常語音用途。
 
-這個分支目前提供的是 `no-AI` 版本，主打低延遲的即時 DSP 處理流程，不包含 RVC、模型下載或 `torch` 類型的 AI 變聲依賴。你可以把它當成一個專注在即時麥克風美化、變聲切換、音效板、快捷鍵與系統匣控制的桌面工具。
+如果你是第一次接觸這類工具，可以把它理解成一個把「麥克風處理、變聲、音效板、程式聲音混音、快捷鍵控制」集中在同一個介面裡的桌面工具。你可以先選麥克風和輸出裝置，再依照講話、唱歌或互動需求去套用模式與調整參數。
 
 ### 軟體特色
 
 - 即時麥克風處理，可把處理後的聲音輸出到 OBS、Discord 或其他支援虛擬音訊裝置的軟體
 - `Talk` 與 `Sing` 兩種主要處理用途，可依情境切換不同人聲鏈
 - `Voice` 頁提供多種變聲模式，例如 `Robot`、`Chipmunk`、`Deep`、`Female`、`Male`、`Custom`
+- 可選擇特定 Windows 程式做 `App Loopback`，把指定程式的聲音單獨混入輸出鏈
+- `App Loopback` 在 Windows 桌面音訊工具裡相當少見，適合把伴奏、遊戲、播放器或瀏覽器音訊精準送進同一條處理與監聽流程
 - `Soundboard` 音效板支援一次匯入多個音效檔、每個音效獨立音量、播放/暫停切換
 - `Hotkeys` 頁支援全域快捷鍵，背景執行時也能用鍵盤或滑鼠按鍵觸發
 - 支援最小化到 Windows 系統匣
@@ -103,6 +105,14 @@ python mictool.py
 2. 在 OBS 裡把麥克風來源設成同一個虛擬音訊裝置
 3. 若需要自己監聽，可額外設定 `Monitor`
 
+#### 使用 App Loopback
+
+1. 到 `Settings` 頁面開啟 App Loopback 或相關設定區
+2. 選擇你要混入的 Windows 程式
+3. 確認該程式正在播放聲音
+4. 啟動後，該程式音訊會和麥克風一起送進目前輸出鏈
+5. 適合拿來混入伴奏、遊戲音效、播放器或瀏覽器聲音，而且不用把整個系統聲音全部一起送進去
+
 #### 使用 Auto Setup
 
 1. 到 `Live` 頁，切到 `Talk Studio`
@@ -157,13 +167,15 @@ dist/MicTool-NoAI/MicTool-NoAI.exe
 
 MicTool is a real-time microphone processing tool for Windows, designed for live streaming, OBS, Discord, karaoke streams, and everyday voice use.
 
-This branch is the `no-AI` edition. It focuses on a low-latency real-time DSP pipeline and does not include RVC, model downloads, or AI voice-conversion dependencies such as `torch`. You can think of it as a desktop tool focused on real-time mic enhancement, voice mode switching, soundboard playback, hotkeys, and tray control.
+If this is your first time using a tool like this, think of MicTool as one desktop app that brings together microphone processing, voice modes, soundboard playback, per-app loopback mixing, hotkeys, and tray control. You start by choosing your input and output devices, then switch into the workflow that fits what you want to do.
 
 ### Highlights
 
 - Real-time microphone processing for OBS, Discord, and other apps that can receive audio from a virtual device
 - Two main vocal workflows: `Talk` and `Sing`
 - `Voice` page with multiple voice styles such as `Robot`, `Chipmunk`, `Deep`, `Female`, `Male`, and `Custom`
+- Select a specific Windows app for `App Loopback` and mix only that app's audio into your output chain
+- Per-app loopback selection is still rare in Windows desktop audio tools, which makes it especially useful for routing backing tracks, game audio, players, or browser audio with more control
 - `Soundboard` page with multi-file import, per-sound volume, and play/pause toggle
 - `Hotkeys` page with global keyboard and mouse bindings that still work in the background
 - Minimize-to-tray support on Windows
@@ -252,6 +264,14 @@ python mictool.py
 2. In OBS, set the microphone source to that same virtual device
 3. Optionally set `Monitor` if you want to hear yourself
 
+#### Using App Loopback
+
+1. Open the App Loopback or related routing area in `Settings`
+2. Select the Windows app you want to mix in
+3. Make sure that app is currently producing audio
+4. Start processing and the selected app audio will be mixed into the active output chain
+5. This is useful when you want to add backing tracks, game audio, media players, or browser audio without sending the entire system mix
+
 #### Using Auto Setup
 
 1. Open `Live` and switch to `Talk Studio`
@@ -306,13 +326,15 @@ Author name is intentionally kept as-is: `結小語 Voidyuu`
 
 MicTool は、Windows 向けのリアルタイムマイク音声処理ツールです。配信、OBS、Discord、歌枠、日常の音声用途に向いています。
 
-このブランチは `no-AI` 版です。低遅延のリアルタイム DSP 処理に特化しており、RVC、モデルのダウンロード、`torch` などの AI 音声変換依存は含みません。リアルタイムのマイク補正、ボイス切り替え、サウンドボード、ホットキー、トレイ操作に集中したデスクトップツールとして使えます。
+この種のツールを初めて使う場合は、MicTool を「マイク処理、ボイス切り替え、サウンドボード、アプリ単位のループバック、ホットキー、トレイ操作をひとつにまとめたデスクトップツール」と考えると分かりやすいです。最初に入力と出力を選び、その後で目的に合ったワークフローに切り替えて使います。
 
 ### 特徴
 
 - OBS、Discord、仮想音声デバイス対応アプリ向けのリアルタイムマイク処理
 - 主なボーカル用途として `Talk` と `Sing` を用意
 - `Voice` ページで `Robot`、`Chipmunk`、`Deep`、`Female`、`Male`、`Custom` などの音声スタイルを切り替え可能
+- 特定の Windows アプリを `App Loopback` として選び、そのアプリの音だけを出力チェーンにミックス可能
+- アプリ単位で選べる loopback は Windows のデスクトップ音声ツールではかなり珍しく、伴奏、ゲーム音、プレイヤー、ブラウザ音声を細かく扱いたいときに便利
 - `Soundboard` ページで複数ファイルの一括取り込み、音ごとの音量調整、再生/一時停止切り替えに対応
 - `Hotkeys` ページで、バックグラウンドでも使えるグローバルなキーボード・マウス割り当てに対応
 - Windows のトレイ最小化に対応
@@ -400,6 +422,14 @@ python mictool.py
 1. `Output` を VB-CABLE などの仮想音声デバイスに設定
 2. OBS 側でその同じ仮想音声デバイスをマイク入力として設定
 3. 自分で聞きたい場合は `Monitor` も設定
+
+#### App Loopback の使い方
+
+1. `Settings` 内の App Loopback または関連するルーティング設定を開く
+2. ミックスしたい Windows アプリを選ぶ
+3. そのアプリが実際に音を出していることを確認する
+4. 開始すると、そのアプリの音声が現在の出力チェーンに加わる
+5. システム全体の音ではなく、伴奏、ゲーム音、メディアプレイヤー、ブラウザ音声だけを送りたいときに便利
 
 #### Auto Setup の使い方
 
